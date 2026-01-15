@@ -5,7 +5,35 @@ const path = require("path");
 const { parse } = require("csv-parse/sync");
 
 const app = express();
-app.use(cors());
+
+// ----------------------------
+// CORS (adjust after you know your GitHub Pages URL)
+// ----------------------------
+// Put your eventual GitHub Pages URL here once you have it, e.g.
+// "https://yourusername.github.io"
+const ALLOWED_ORIGINS = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  // "https://YOUR_GITHUB_USERNAME.github.io",
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // allow non-browser requests (like curl/postman) that have no origin
+      if (!origin) return callback(null, true);
+
+      if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+
+      return callback(
+        new Error(
+          `CORS blocked for origin: ${origin}. Add it to ALLOWED_ORIGINS in server/index.js`
+        )
+      );
+    },
+  })
+);
+
 app.use(express.json());
 
 // ----------------------------
@@ -21,7 +49,6 @@ function loadCsv(filePath) {
 }
 
 function toBool(value) {
-  // handles TRUE/FALSE strings
   if (typeof value !== "string") return false;
   return value.trim().toLowerCase() === "true";
 }
@@ -48,20 +75,13 @@ const pathologiesPath = path.join(dataDir, "pathologies.csv");
 const locationsRows = loadCsv(locationsPath);
 const pathologiesRows = loadCsv(pathologiesPath);
 
-// Build region list and location lookup
+// Regions + locations
 const regionsSet = new Set();
-const locationsByName = new Map();
-
 for (const row of locationsRows) {
-  const name = (row.Name || "").trim();
   const region = (row.Region || "").trim();
-  if (!name) continue;
-
-  regionsSet.add(region);
-  locationsByName.set(name, { name, region });
+  if (region) regionsSet.add(region);
 }
-
-const regions = Array.from(regionsSet).filter(Boolean).sort();
+const regions = Array.from(regionsSet).sort();
 
 // Normalize pathologies
 const pathologies = pathologiesRows.map((row) => {
@@ -95,7 +115,6 @@ const pathologies = pathologiesRows.map((row) => {
 // Scoring
 // ----------------------------
 function scorePathology(p, input) {
-  // input: { age, mechanism, swelling, selectedLocations }
   const reasons = [];
 
   // Age
@@ -139,7 +158,7 @@ function scorePathology(p, input) {
     else reasons.push(`swelling differs (input ${uSwell} vs expected ${p.swelling})`);
   }
 
-  // Location match (simple coverage)
+  // Location (single-location friendly)
   const selected = Array.isArray(input.selectedLocations) ? input.selectedLocations : [];
   const matches = selected.filter((loc) => p.locations.includes(loc));
 
@@ -151,7 +170,7 @@ function scorePathology(p, input) {
     locationScore = matches.length > 0 ? 1 : 0;
     reasons.push(locationScore === 1 ? "location matches" : "location does not match");
   }
-  
+
   // Weighted total
   const total =
     0.3 * ageScore +
@@ -165,20 +184,17 @@ function scorePathology(p, input) {
 // ----------------------------
 // API Endpoints
 // ----------------------------
-
-// quick test
 app.get("/health", (req, res) => {
   res.json({ ok: true });
 });
 
-// list regions
 app.get("/regions", (req, res) => {
   res.json({ regions });
 });
 
-// list locations (optionally by region)
 app.get("/locations", (req, res) => {
   const region = (req.query.region || "").trim();
+
   const all = locationsRows
     .map((r) => ({ name: (r.Name || "").trim(), region: (r.Region || "").trim() }))
     .filter((x) => x.name);
@@ -188,7 +204,6 @@ app.get("/locations", (req, res) => {
   res.json({ locations: filtered });
 });
 
-// differential scoring
 app.post("/differential", (req, res) => {
   const { age, mechanism, swelling, selectedLocations } = req.body || {};
 
@@ -209,13 +224,12 @@ app.post("/differential", (req, res) => {
         location: { matches: s.matches, misses: s.misses },
       };
     })
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 20); // top 20 for MVP
+    .sort((a, b) => b.score - a.score);
 
   res.json({ input, results, meta: { algorithmVersion: "v0.1.0" } });
 });
 
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-  console.log(`API server running on http://localhost:${PORT}`);
+  console.log(`API server running on port ${PORT}`);
 });
