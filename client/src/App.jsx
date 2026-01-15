@@ -8,8 +8,6 @@ export default function App() {
   const [locations, setLocations] = useState([]);
 
   const [location1, setLocation1] = useState("");
-  const [location2, setLocation2] = useState("");
-  const [location3, setLocation3] = useState("");
 
   const [age, setAge] = useState(14);
   const [mechanism, setMechanism] = useState("atraumatic");
@@ -17,8 +15,8 @@ export default function App() {
 
   const [results, setResults] = useState([]);
   const selectedLocations = useMemo(
-    () => [location1, location2, location3].filter(Boolean),
-    [location1, location2, location3]
+    () => (location1 ? [location1] : []),
+    [location1]
   );
 
   // load regions
@@ -71,8 +69,6 @@ export default function App() {
               onChange={(e) => {
                 setRegion(e.target.value);
                 setLocation1("");
-                setLocation2("");
-                setLocation3("");
               }}
               style={{ marginLeft: 8 }}
             >
@@ -86,7 +82,7 @@ export default function App() {
 
           <div style={{ marginTop: 12 }}>
             <div>
-              Location 1:
+              Location:
               <select value={location1} onChange={(e) => setLocation1(e.target.value)} style={{ marginLeft: 8 }}>
                 <option value="">(none)</option>
                 {locations.map((l) => (
@@ -96,32 +92,8 @@ export default function App() {
                 ))}
               </select>
             </div>
-
-            <div style={{ marginTop: 8 }}>
-              Location 2:
-              <select value={location2} onChange={(e) => setLocation2(e.target.value)} style={{ marginLeft: 8 }}>
-                <option value="">(none)</option>
-                {locations.map((l) => (
-                  <option key={l.name} value={l.name}>
-                    {l.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div style={{ marginTop: 8 }}>
-              Location 3:
-              <select value={location3} onChange={(e) => setLocation3(e.target.value)} style={{ marginLeft: 8 }}>
-                <option value="">(none)</option>
-                {locations.map((l) => (
-                  <option key={l.name} value={l.name}>
-                    {l.name}
-                  </option>
-                ))}
-              </select>
-            </div>
           </div>
-
+          
           <div style={{ marginTop: 12 }}>
             <div>
               Age:
@@ -159,7 +131,7 @@ export default function App() {
           </button>
 
           <div style={{ marginTop: 12 }}>
-            <strong>Selected Locations:</strong> {selectedLocations.join(", ") || "(none)"}
+            <strong>Selected Location:</strong> {location1 || "(none)"}
           </div>
         </div>
 

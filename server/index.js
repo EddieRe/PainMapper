@@ -142,9 +142,16 @@ function scorePathology(p, input) {
   // Location match (simple coverage)
   const selected = Array.isArray(input.selectedLocations) ? input.selectedLocations : [];
   const matches = selected.filter((loc) => p.locations.includes(loc));
-  const locationScore = p.locations.length > 0 ? matches.length / p.locations.length : 0;
-  reasons.push(`location matches: ${matches.length}/${p.locations.length}`);
 
+  let locationScore = 0;
+  if (selected.length === 0) {
+    locationScore = 0;
+    reasons.push("no location selected");
+  } else {
+    locationScore = matches.length > 0 ? 1 : 0;
+    reasons.push(locationScore === 1 ? "location matches" : "location does not match");
+  }
+  
   // Weighted total
   const total =
     0.3 * ageScore +
