@@ -1,0 +1,99 @@
+﻿Name,Region
+Tibial Tubercle,Knee
+Patellar Tendon,Knee
+Distal Pole of Patella,Knee
+Quadriceps Tendon,Knee
+Lateral Knee Joint Line,Knee
+Medial Knee Joint Line,Knee
+Popliteal Fossa,Knee
+Patellar Facet,Knee
+Patella,Knee
+Distal IT Band,Knee
+Hoffa's Fat Pad,Knee
+Distal Femur,Knee
+Proximal Tibia,Knee
+Proximal Fibula,Knee
+Lateral Malleolus,Ankle
+Medial Malleolus,Ankle
+Tibiotalar Articulation,Ankle
+Distal Achilles,Ankle
+Fibulotalar Articulation,Ankle
+Anterior Ankle,Ankle
+Distal Tibia,Ankle
+Distal Fibula,Ankle
+Calcaneal Region,Ankle
+Groin,Hip
+Anterior Proximal Thigh,Hip
+Lateral Proximal Thigh/Greater Trochanteric Region,Hip
+Gluteal Region,Hip
+Pubic Region,Hip
+Epigastric Region,Abdomen
+Suprapubic Region,Abdomen
+Left Flank,Abdomen
+Right Flank,Abdomen
+Right Lower Abdomen,Abdomen
+Left Lower Abdomen,Abdomen
+Left Chest,Chest
+Right Axillary,Chest
+Left Axillary,Chest
+Sternal Area,Chest
+Right Chest,Chest
+Posterior Neck,Neck
+Lateral Neck,Neck
+Anterior Neck,Neck
+Left Upper Quadrant,Upper Back
+Midline Upper Quadrant,Upper Back
+Right Upper Quadrant,Upper Back
+Left Center Quadrant,Upper Back
+Midline Center Quadrant,Upper Back
+Right Center Quadrant,Upper Back
+Left Lower Quadrant,Lower Back
+Midline Lower Quadrant,Lower Back
+Right Lower Quadrant,Lower Back
+Anterior Shoulder,Shoulder
+Lateral Shoulder,Shoulder
+Posterior Shoulder,Shoulder
+Superior Shoulder,Shoulder
+Inferior Axillary Region,Shoulder
+Scapular Region,Shoulder
+Antecubital Region,Elbow
+Medial Epicondyle,Elbow
+Lateral Epicondyle,Elbow
+Posterior Cubital Region,Elbow
+Anterior Wrist,Wrist
+Posterior Wrist,Wrist
+Medial Wrist,Wrist
+Lateral Wrist,Wrist
+Anterior/Posterior Scaphoid Region,Wrist
+Radial Hand,Hand
+Ulnar Hand,Hand
+Palmar Region,Hand
+Dorsal Hand,Hand
+Thumb (Anterior/Posterior),Finger
+Pointer (Anterior/Posterior),Finger
+Middle (Anterior/Posterior),Finger
+Ring (Anterior/Posterior),Finger
+Pinky (Anterior/Posterior),Finger
+All Fingers DIP,Finger
+All Fingers PIP (No Thumb),Finger
+All Fingers MCP,Finger
+All Fingers Proximal Phalanx,Finger
+All Fingers Middle Phalanx (No Thumb),Finger
+All Fingers Distal Phalanx,Finger
+All Fingers Metacarpal,Finger
+All Fingers Carpal-Metacarpal,Finger
+Medial Tarsals (Plantar),Foot
+Lateral Tarsals (Plantar),Foot
+Medial Tarsals (Dorsal),Foot
+Lateral Tarsals (Dorsal),Foot
+All Toes Proximal Phalanx,Toe
+All Toes Middle Phalanx,Toe
+All Toes Distal Phalanx,Toe
+PIP Joint,Toe
+DIP Joint,Toe
+Plantar Forefoot,Foot
+Dorsal Forefoot,Foot
+All Toes Metasarsal,Toe
+All Toes MTP Joint,Toe
+All Toes Tarsometatarsal Joint,Toe
+Plantar Calcaneal Region,Foot

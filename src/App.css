@@ -1,61 +1,351 @@
-html, body, #root {
-  margin: 0;
+:root {
+  color: #f3f4f6;
+  background: #202327;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+html,
+body,
+#root {
   width: 100%;
   height: 100%;
+  margin: 0;
 }
 
 * {
   box-sizing: border-box;
 }
 
+body {
+  min-width: 320px;
+  overflow: hidden;
+  color: #f3f4f6;
+  background: #202327;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
 .app-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
   width: 100%;
   height: 100%;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
+  min-width: 0;
+  min-height: 0;
   overflow: hidden;
+  background: #202327;
 }
 
 .viewer-panel {
+  position: relative;
+  width: 100%;
+  height: 100%;
   min-width: 0;
   min-height: 0;
-  background: #2a2a2a;
+  overflow: hidden;
+  background: #282c31;
+}
+
+.viewer-panel canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  outline: none;
 }
 
 .sidebar {
-  width: 320px;
-  min-width: 320px;
-  max-width: 320px;
-  padding: 20px;
-  border-left: 1px solid #ddd;
-  background: #fafafa;
-  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  width: 340px;
+  min-width: 340px;
+  height: 100%;
+  padding: 24px;
   overflow-y: auto;
+  color: #f3f4f6;
+  background: #30343a;
+  border-left: 1px solid #484d55;
+  scrollbar-color: #5d646e #30343a;
+  scrollbar-width: thin;
+}
+
+.sidebar h1 {
+  margin: 0 0 24px;
+  color: #ffffff;
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.sidebar-card {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-bottom: 16px;
+  padding: 17px;
+  color: #f9fafb;
+  background: #262a2f;
+  border: 1px solid #4b515a;
+  border-radius: 10px;
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 20%),
+    0 6px 18px rgb(0 0 0 / 10%);
+}
+
+.card-label {
+  color: #aeb6c2;
+  font-size: 0.76rem;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.055em;
+}
+
+.card-value {
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.card-secondary {
+  color: #aeb6c2;
+  font-size: 0.87rem;
+}
+
+.differential-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 5px 0 0;
+  padding-left: 24px;
+}
+
+.differential-list li {
+  padding-left: 4px;
+  color: #f3f4f6;
+  line-height: 1.4;
+}
+
+.differential-list li::marker {
+  color: #f59e0b;
+  font-weight: 750;
+}
+
+.diagnosis-name {
+  color: #f8fafc;
+  font-weight: 600;
+}
+
+.empty-message,
+.error-message {
+  margin: 4px 0 0;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.empty-message {
+  color: #aeb6c2;
+}
+
+.error-message {
+  color: #fca5a5;
+}
+
+.checkbox-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 3px 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-row input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.checkbox-control {
+  position: relative;
+  flex: 0 0 auto;
+  width: 19px;
+  height: 19px;
+  background: #1e2227;
+  border: 1px solid #626a75;
+  border-radius: 4px;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.checkbox-row:hover .checkbox-control {
+  border-color: #f59e0b;
+}
+
+.checkbox-row input:focus-visible + .checkbox-control {
+  box-shadow:
+    0 0 0 3px rgb(245 158 11 / 25%);
+}
+
+.checkbox-row input:checked + .checkbox-control {
+  background: #f59e0b;
+  border-color: #f59e0b;
+}
+
+.checkbox-row input:checked + .checkbox-control::after {
+  position: absolute;
+  top: 2px;
+  left: 6px;
+  width: 5px;
+  height: 10px;
+  content: "";
+  border-right: 2px solid #181b1f;
+  border-bottom: 2px solid #181b1f;
+  transform: rotate(45deg);
+}
+
+.checkbox-text {
+  color: #f3f4f6;
+  font-size: 0.93rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.debug-description {
+  margin: 3px 0 0;
+  color: #929ba7;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.data-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 2px 4px;
+  color: #8f98a5;
+  font-size: 0.75rem;
+}
+
+/*
+ * Pushes the footer to the bottom when the sidebar content is short.
+ * If the sidebar becomes taller than the viewport, it follows the
+ * content naturally and remains accessible through scrolling.
+ */
+.sidebar-footer {
+  margin-top: auto;
+  padding: 18px 4px 4px;
+  color: #929ba7;
+  border-top: 1px solid #484d55;
+  font-size: 0.6rem;
+  line-height: 1.35;
+}
+
+.sidebar-footer p {
+  margin: 0;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.sidebar-footer p + p {
+  margin-top: 7px;
+}
+
+.disclaimer-title {
+  color: #d5dae1;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.disclaimer-text {
+  color: #9da6b2;
+  font-size: 0.6rem;
+  line-height: 1.4;
+}
+
+.credits-text,
+.contact-text {
+  color: #858f9b;
+  font-size: 0.58rem;
+}
+
+.contact-text a {
+  color: #f5b041;
+  text-decoration: none;
+  transition: color 120ms ease;
+}
+
+.contact-text a:hover {
+  color: #f8c471;
+  text-decoration: underline;
+}
+
+.contact-text a:focus-visible {
+  outline: 2px solid #f59e0b;
+  outline-offset: 3px;
+  border-radius: 2px;
 }
 
 @media (max-width: 900px) {
   .app-shell {
-    grid-template-columns: minmax(0, 1fr) 260px;
+    grid-template-columns: minmax(0, 1fr) 290px;
   }
 
   .sidebar {
-    width: 260px;
-    min-width: 260px;
-    max-width: 260px;
+    width: 290px;
+    min-width: 290px;
+    padding: 18px;
   }
 }
 
-@media (max-width: 700px) {
+@media (max-width: 650px) {
+  body {
+    overflow: auto;
+  }
+
   .app-shell {
     grid-template-columns: 1fr;
-    grid-template-rows: 1fr 220px;
+    grid-template-rows: minmax(440px, 1fr) auto;
+    height: 100%;
+    overflow-y: auto;
+  }
+
+  .viewer-panel {
+    min-height: 440px;
   }
 
   .sidebar {
     width: 100%;
     min-width: 0;
-    max-width: none;
+    height: auto;
+    padding: 18px;
+    overflow: visible;
+    border-top: 1px solid #484d55;
     border-left: none;
-    border-top: 1px solid #ddd;
+  }
+
+  .sidebar-footer {
+    margin-top: 24px;
   }
 }
