@@ -25,7 +25,7 @@ export default function App() {
   const [locations, setLocations] = useState([])
   const [pathologies, setPathologies] = useState([])
   const [selectedZone, setSelectedZone] = useState(null)
-  const [showDebugNodes, setShowDebugNodes] = useState(true)
+  const [showDebugNodes, setShowDebugNodes] = useState(false)
   const [loading, setLoading] = useState(true)
   const [dataError, setDataError] = useState(null)
 
