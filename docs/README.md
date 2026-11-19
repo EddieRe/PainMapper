@@ -1,6 +1,6 @@
 # PainMapper project notes
 
-Local working copy of Eddie Re's PainMapper (https://github.com/EddieRe/PainMapper). Milestones 1–4 were built locally and proposed to Eddie as one pull request on 19 November 2026 (branch `milestone-4-anatomy-workspace`); nothing is merged or deployed unless Eddie does so. **Eddie reviews all clinical content and diagnostic behavior.** Mike directs appearance and interaction.
+Local working copy of Eddie Re's PainMapper (https://github.com/EddieRe/PainMapper). Milestones 1–4 were built locally and proposed to Eddie as one pull request on 19 November 2026 (branch `milestone-4-anatomy-workspace`); nothing is merged or deployed unless Eddie does so. **Eddie reviews all clinical content and diagnostic behavior.** The designer directs appearance and interaction.
 
 ## Status (18 November 2026)
 

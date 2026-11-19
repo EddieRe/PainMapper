@@ -2,7 +2,7 @@
 
 > **Reading this in the repository:** this note was written beside the local review copy. The folders it mentions (`change/`, `review-evidence/`, `.backup/`, `Desktop\PainMapper-m4-loading`) hold the patch file, the test harness, timings, pictures and checkpoints on the PC where the work was done; they are not part of this repository. The code it describes is.
 
-**Status (19 November 2026):** prepared and checked in an isolated copy (`Desktop\PainMapper-m4-loading`, port 5176), then, on Mike's instruction, **applied to Milestone 4** (`Desktop\PainMapper-main`, port 5173) in two steps: the Skin switch with the fast loading, then the ••• menu entry for it (section 9). Milestone 4's source is now identical to this copy's. Not reviewed by Eddie. Nothing published or pushed. The anatomy pilot and the focus-reveal work copy are unchanged. "Milestone 4" in the comparisons below means Milestone 4 as it was before this change.
+**Status (19 November 2026):** prepared and checked in an isolated copy (`Desktop\PainMapper-m4-loading`, port 5176), then, on the designer's instruction, **applied to Milestone 4** (`Desktop\PainMapper-main`, port 5173) in two steps: the Skin switch with the fast loading, then the ••• menu entry for it (section 9). Milestone 4's source is now identical to this copy's. Not reviewed by Eddie. Nothing published or pushed. The anatomy pilot and the focus-reveal work copy are unchanged. "Milestone 4" in the comparisons below means Milestone 4 as it was before this change.
 
 ## 1. In short
 
@@ -142,20 +142,20 @@ Start-up = from opening the page until the 3D view is ready. It is 80–225 ms f
 7. **Same browser-tab title as Milestone 4:** check the address (5176 = this copy, 5173 = Milestone 4).
 8. **Tunable choices:** the 150 ms delay before the note, the 60 s before textures are released in Gray, the 20 s limit per step, and the room thresholds on phones.
 
-## 8. Decisions for Mike
+## 8. Decisions for the designer
 
 1. **Apply this to Milestone 4?** Decided: yes. Applied on 19 November 2026, with checkpoints so each step can be undone (section 9).
 2. **Where the control sits.** Built: option A, bottom-right under the zoom buttons (phones: above the panel on the right), and, decided on 19 November, the ••• menu entry as well ("A and C together" below). It keeps the boards' top row exactly as built and changes nothing the camera measures, so Gray stays identical to Milestone 4; it is less prominent than the top row. The alternatives from the interface review:
    - B: next to Front | Back at the top. Easier to find, but it adds a row under the desktop toolbar, moves the "Patient's left/right" labels, and on phones becomes an unlabelled round icon in the top-left corner.
    - C: in the ••• menu, with the status note on the stage only while needed. Milestone 4 looks exactly as before until someone opens the menu, but it is hard to find and each comparison takes three clicks.
    - A and C together: the corner switch where there is room, plus the ••• menu entry so the skin can always be changed on the smallest phones (section 7, item 6). **Built and applied** (section 2).
-3. **"Gray" or "Grey".** Decided by Mike on 19 November 2026: keep "Gray". It is the spelling on the corner switch, in the menu ("Show gray skin", "Keep gray skin"), in the failure note and in what screen readers hear. (Milestone 4's code comments say "grey" in places; those are not shown to learners.)
+3. **"Gray" or "Grey".** Decided by the designer on 19 November 2026: keep "Gray". It is the spelling on the corner switch, in the menu ("Show gray skin", "Keep gray skin"), in the failure note and in what screen readers hear. (Milestone 4's code comments say "grey" in places; those are not shown to learners.)
 4. **Optional refinement:** spread the remaining ~60 ms frame over several frames (section 7, item 3).
 5. **For Eddie:** the patch and this note are ready for his review. No clinical content, data, rules or wording about conditions changed.
 
 ## 9. Applying it to Milestone 4
 
-### What was done on this PC (19 November 2026, on Mike's instruction)
+### What was done on this PC (19 November 2026, on the designer's instruction)
 
 **Step 1, the Skin switch with the fast loading** ("Yes, apply it"):
 

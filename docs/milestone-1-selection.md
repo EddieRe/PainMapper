@@ -71,7 +71,7 @@ A bug found during this testing and fixed: the hover label's invisible wrapper b
 
 ## Open points
 
-**For Mike (look and feel):**
+**For the designer (look and feel):**
 1. The label "Nearby locations" and the pill-shaped buttons: keep, rename, or restyle?
 2. Clicking the body where there is no location (e.g. the head) clears the selection, as before. Should it keep the current selection instead?
 3. "Left/Right" is from the patient's perspective, the clinical norm. Should the app say so on screen for non-clinical users?
