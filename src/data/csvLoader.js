@@ -21,6 +21,9 @@ function parseBoolean(value) {
 }
 
 function parseNumber(value, fallback = null) {
+  // A blank cell means "not recorded". Number('') would silently be 0.
+  if (normalizeText(value) === '') return fallback
+
   const parsedValue = Number(value)
 
   return Number.isFinite(parsedValue)

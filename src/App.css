@@ -1,351 +1,3556 @@
-:root {
-  color: #f3f4f6;
-  background: #202327;
-  font-family:
-    Inter,
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-}
+/*
+ * PainMapper layout and components (Milestone 4).
+ *
+ * Two arrangements (App.jsx, layout/useLayout.js):
+ *   [data-layout="wide"]    viewer beside the information panel
+ *   [data-layout="narrow"]  viewer with a movable sheet over its lower part
+ *
+ * Stacking inside the stage: viewer 0 · selection label 4 (placed clear of
+ * the controls; never drawn over them) · viewer chrome 5 · loading/error
+ * card 8 · wide search 12 · sheet 20 · phone search 30 · editor backdrop 55
+ * and editor 56 (above the header, 50) · menus 60 · About dialog (top
+ * layer).
+ * Sizes follow the reference boards (normalised to a 390 px phone and a
+ * 1440 px desktop).
+ */
 
-html,
-body,
-#root {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-}
+/* ===== App shell ======================================================== */
 
-* {
-  box-sizing: border-box;
-}
-
-body {
-  min-width: 320px;
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
-  color: #f3f4f6;
-  background: #202327;
+  background: var(--surface);
 }
 
-button,
-input,
-select,
-textarea {
-  font: inherit;
+.app[data-layout="wide"] {
+  --ink-2: #565e6c;
+  --ink-3: #575f6f;
 }
 
-.app-shell {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
-  width: 100%;
-  height: 100%;
-  min-width: 0;
-  min-height: 0;
-  overflow: hidden;
-  background: #202327;
-}
-
-.viewer-panel {
+.app-header {
   position: relative;
-  width: 100%;
-  height: 100%;
+  z-index: 50;
+  display: flex;
+  flex: none;
+  gap: var(--sp-3);
+  align-items: center;
+  justify-content: space-between;
+  height: calc(var(--header-h) + env(safe-area-inset-top));
+  padding: env(safe-area-inset-top) var(--sp-2) 0 var(--sp-5);
+  background: var(--surface);
+}
+
+.app-header-wide {
+  --header-h: 62px;
+
+  padding: 0 var(--sp-5) 0 var(--sp-8);
+  background: linear-gradient(#fafafa, #fefefe);
+  border-bottom: 1px solid #eef0f1;
+}
+
+.brand {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  min-width: 0;
+}
+
+.brand-mark {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 37px;
+  height: 37px;
+  color: #fff;
+  background: linear-gradient(150deg, #07796e 0%, #06756c 55%, #056b62 100%);
+  border-radius: 11px;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 18%), 0 1px 2px rgb(5 90 80 / 30%);
+}
+
+.app-header-wide .brand-mark {
+  width: 42px;
+  height: 42px;
+  background: linear-gradient(150deg, #047b76 0%, #077f79 55%, #0a8681 100%);
+  border-radius: 10px;
+}
+
+.brand-name {
+  font-family: var(--font-display);
+  font-size: var(--fs-20);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.app-header-wide .brand-name {
+  font-size: var(--fs-28);
+}
+
+.brand-divider {
+  width: 1.5px;
+  height: 24px;
+  margin: 0 var(--sp-2);
+  background: #8c8f97;
+  opacity: 0.6;
+}
+
+.brand-tagline {
+  overflow: hidden;
+  font-size: var(--fs-19);
+  color: #505a6a;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header-actions {
+  display: flex;
+  flex: none;
+  gap: var(--sp-1);
+  align-items: center;
+}
+
+.header-icon-button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  color: var(--ink);
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-md);
+}
+
+.header-icon-button:hover {
+  background: var(--surface-3);
+}
+
+.header-link {
+  display: inline-flex;
+  gap: var(--sp-2);
+  align-items: center;
+  height: 40px;
+  padding: 0 var(--sp-3);
+  font-size: var(--fs-17);
+  font-weight: 500;
+  color: #0d0d0d;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-md);
+}
+
+.header-link:hover {
+  background: var(--surface-3);
+}
+
+/* ===== Stage ============================================================= */
+
+.stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.app[data-layout="wide"] .stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(380px, 42vw, 620px);
+}
+
+.viewer-area {
+  position: relative;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  background: #282c31;
+  container: viewer / size;
 }
 
-.viewer-panel canvas {
+.app[data-layout="narrow"] .viewer-area {
+  position: absolute;
+  inset: 0;
+}
+
+/* ===== Viewer ============================================================ */
+
+.viewer {
+  position: absolute;
+  inset: 0;
+  /* clip, not hidden: focusing a control near the edge must not scroll it. */
+  overflow: clip;
+  color: var(--on-stage);
+  isolation: isolate;
+}
+
+/* Almost flat navy, a touch darker towards the bottom, with a faint floor
+   glow under the feet. */
+.viewer-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse 34% 7% at 50% 91%, rgb(36 72 86 / 55%) 0%, transparent 100%),
+    radial-gradient(ellipse 70% 60% at 50% 42%, rgb(20 58 72 / 45%) 0%, transparent 75%),
+    linear-gradient(var(--stage-top) 0%, var(--stage-mid) 55%, var(--stage-bottom) 100%);
+}
+
+.viewer-canvas {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+}
+
+.viewer-canvas canvas {
   display: block;
-  width: 100% !important;
-  height: 100% !important;
   outline: none;
 }
 
-.sidebar {
-  display: flex;
-  flex-direction: column;
-  width: 340px;
-  min-width: 340px;
-  height: 100%;
-  padding: 24px;
-  overflow-y: auto;
-  color: #f3f4f6;
-  background: #30343a;
-  border-left: 1px solid #484d55;
-  scrollbar-color: #5d646e #30343a;
-  scrollbar-width: thin;
-}
-
-.sidebar h1 {
-  margin: 0 0 24px;
-  color: #ffffff;
-  font-size: 1.55rem;
-  font-weight: 700;
-  letter-spacing: -0.025em;
-}
-
-.sidebar-card {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  margin-bottom: 16px;
-  padding: 17px;
-  color: #f9fafb;
-  background: #262a2f;
-  border: 1px solid #4b515a;
-  border-radius: 10px;
-  box-shadow:
-    0 1px 2px rgb(0 0 0 / 20%),
-    0 6px 18px rgb(0 0 0 / 10%);
-}
-
-.card-label {
-  color: #aeb6c2;
-  font-size: 0.76rem;
-  font-weight: 650;
-  text-transform: uppercase;
-  letter-spacing: 0.055em;
-}
-
-.card-value {
-  color: #ffffff;
-  font-size: 1rem;
-  font-weight: 700;
-  line-height: 1.35;
-}
-
-.card-secondary {
-  color: #aeb6c2;
-  font-size: 0.87rem;
-}
-
-.differential-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin: 5px 0 0;
-  padding-left: 24px;
-}
-
-.differential-list li {
-  padding-left: 4px;
-  color: #f3f4f6;
-  line-height: 1.4;
-}
-
-.differential-list li::marker {
-  color: #f59e0b;
-  font-weight: 750;
-}
-
-.diagnosis-name {
-  color: #f8fafc;
-  font-weight: 600;
-}
-
-.empty-message,
-.error-message {
-  margin: 4px 0 0;
-  font-size: 0.92rem;
-  line-height: 1.5;
-}
-
-.empty-message {
-  color: #aeb6c2;
-}
-
-.error-message {
-  color: #fca5a5;
-}
-
-.checkbox-row {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  padding: 3px 0;
-  cursor: pointer;
-  user-select: none;
-}
-
-.checkbox-row input {
+.viewer-chrome {
   position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  opacity: 0;
+  inset: 0;
+  z-index: 5;
   pointer-events: none;
 }
 
-.checkbox-control {
-  position: relative;
-  flex: 0 0 auto;
-  width: 19px;
-  height: 19px;
-  background: #1e2227;
-  border: 1px solid #626a75;
-  border-radius: 4px;
-  transition:
-    background 120ms ease,
-    border-color 120ms ease,
-    box-shadow 120ms ease;
+.viewer-chrome > * {
+  pointer-events: auto;
 }
 
-.checkbox-row:hover .checkbox-control {
-  border-color: #f59e0b;
+/* White focus rings for the controls on the dark stage only (the search's
+   white results keep the teal ring). */
+.viewer-chrome :focus-visible,
+.viewer-overlay :focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
 }
 
-.checkbox-row input:focus-visible + .checkbox-control {
-  box-shadow:
-    0 0 0 3px rgb(245 158 11 / 25%);
+/* The search's clear (x) sits on the white field: brand ring, inside it. */
+.viewer .search-clear:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 0;
 }
 
-.checkbox-row input:checked + .checkbox-control {
-  background: #f59e0b;
-  border-color: #f59e0b;
-}
-
-.checkbox-row input:checked + .checkbox-control::after {
+/* Wide: search + toolbar along the top. The search has its own layer,
+   above the stage's controls, label and loading card. */
+.viewer-wide .viewer-search {
   position: absolute;
-  top: 2px;
-  left: 6px;
-  width: 5px;
-  height: 10px;
-  content: "";
-  border-right: 2px solid #181b1f;
-  border-bottom: 2px solid #181b1f;
-  transform: rotate(45deg);
+  top: 24px;
+  left: 28px;
+  z-index: 12;
+  width: min(388px, calc(100% - 446px));
+  min-width: 280px;
 }
 
-.checkbox-text {
-  color: #f3f4f6;
-  font-size: 0.93rem;
+.viewer-toolbar {
+  position: absolute;
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.viewer-wide .viewer-toolbar {
+  top: 24px;
+  right: 21px;
+  height: 42px;
+}
+
+.viewer-narrow .viewer-toolbar {
+  top: calc(var(--viewer-top, 0px) + 13px);
+  left: 50%;
+  transform: translateX(-50%);
+  transition: top 240ms ease;
+}
+
+/* Phones: the controls move down while the search bar shows above them
+   (the camera's covers use the same bar). */
+.app[data-layout="narrow"][data-searchbar="shown"] .viewer-narrow {
+  --viewer-top: 66px;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 24px;
+  background: #6c8999;
+}
+
+/* Phone: white pill with a soft dark halo. */
+.segmented {
+  display: inline-flex;
+  padding: 2px;
+  background: #fefefe;
+  border-radius: 15px;
+  box-shadow: 0 0 0 1px rgb(2 28 37 / 25%), 0 2px 12px rgb(2 28 37 / 55%);
+}
+
+.segmented-option {
+  min-width: 96px;
+  height: 31px;
+  padding: 0 var(--sp-4);
+  font-size: var(--fs-15);
+  font-weight: 700;
+  color: #000519;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: 13px;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+/* The chosen side: mint fill plus a teal edge, so the state does not rely
+   on a pale fill alone. */
+.segmented-option[aria-pressed="true"] {
+  color: var(--brand-strong);
+  background: #c7ece6;
+  box-shadow: inset 0 0 0 1.5px var(--brand-ink);
+}
+
+.segmented-option:hover:not([aria-pressed="true"]) {
+  background: #f1f4f4;
+}
+
+/* Desktop: outlined dark-glass pill, mint selection. Dark enough to stay
+   legible when the light body is behind it. */
+.viewer-wide .segmented {
+  padding: 0;
+  background: rgb(6 30 41 / 78%);
+  border-radius: var(--r-pill);
+  box-shadow: inset 0 0 0 1px rgb(202 224 230 / 75%), 0 4px 14px rgb(2 18 24 / 30%);
+  backdrop-filter: blur(6px);
+}
+
+.viewer-wide .segmented-option {
+  min-width: 85px;
+  height: 42px;
   font-weight: 600;
-  line-height: 1.35;
+  color: #e4f9ff;
+  border-radius: var(--r-pill);
 }
 
-.debug-description {
-  margin: 3px 0 0;
-  color: #929ba7;
-  font-size: 0.8rem;
-  line-height: 1.45;
+.viewer-wide .segmented-option[aria-pressed="true"] {
+  color: #000708;
+  background: #d2f5ef;
 }
 
-.data-summary {
+.viewer-wide .segmented-option:hover:not([aria-pressed="true"]) {
+  background: rgb(255 255 255 / 10%);
+}
+
+.viewer-button {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  height: 42px;
+  padding: 0 var(--sp-5) 0 var(--sp-4);
+  font-size: var(--fs-15);
+  font-weight: 500;
+  color: #e2f7ff;
+  cursor: pointer;
+  background: var(--stage-button);
+  border: 1px solid #bed3dd;
+  border-radius: var(--r-pill);
+}
+
+.viewer-button:hover {
+  background: #1a4657;
+}
+
+.viewer-icon-button {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  color: #fff;
+  cursor: pointer;
+  background: var(--stage-control);
+  border: 2px solid rgb(241 254 255 / 90%);
+  border-radius: 50%;
+}
+
+.viewer-icon-button:hover:not(:disabled) {
+  background: #0d3343;
+}
+
+.viewer-icon-button:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
+.viewer-whole-body {
+  position: absolute;
+  top: calc(var(--viewer-top, 0px) + 11px);
+  right: 12px;
+  width: 38px;
+  height: 38px;
+  border-width: 1.5px;
+  transition: top 240ms ease;
+}
+
+.zoom-controls {
+  position: absolute;
+  right: 29px;
+  bottom: 86px;
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  padding: 2px 4px;
-  color: #8f98a5;
-  font-size: 0.75rem;
+  gap: 12px;
 }
 
-/*
- * Pushes the footer to the bottom when the sidebar content is short.
- * If the sidebar becomes taller than the viewport, it follows the
- * content naturally and remains accessible through scrolling.
- */
-.sidebar-footer {
-  margin-top: auto;
-  padding: 18px 4px 4px;
-  color: #929ba7;
-  border-top: 1px solid #484d55;
-  font-size: 0.6rem;
+.edge-label {
+  position: absolute;
+  top: calc(var(--viewer-top, 0px) + 64px);
+  max-width: 5.5em;
+  font-size: var(--fs-14);
+  line-height: 1.18;
+  color: var(--on-stage-2);
+  text-shadow: 0 1px 3px rgb(0 0 0 / 55%);
+  pointer-events: none;
+  transition: top 240ms ease;
+}
+
+.edge-label-left {
+  left: 22px;
+}
+
+.edge-label-right {
+  right: 19px;
+  text-align: right;
+}
+
+.viewer-wide .edge-label {
+  top: 92px;
+  max-width: none;
+  font-size: var(--fs-15);
+}
+
+.viewer-wide .edge-label-left {
+  left: 30px;
+}
+
+.viewer-wide .edge-label-right {
+  right: 30px;
+}
+
+.viewer-narrow .edge-label {
+  max-width: 4.6em;
+}
+
+.viewer-narrow .edge-label-right {
+  right: 58px;
+}
+
+.viewer-locator {
+  position: absolute;
+  bottom: 84px;
+  left: 44px;
+}
+
+.viewer-hint {
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  /* Segoe UI Variable (Windows 11) has no italic; Segoe UI has a real one,
+     and the other platforms' fonts in --font-sans do too. */
+  font-family: "Segoe UI", var(--font-sans);
+  font-size: var(--fs-17);
+  font-style: italic;
+  font-synthesis: style;
+  color: #ecf9ff;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0.9;
+  transform: translateX(-50%);
+  transition: opacity 400ms ease;
+}
+
+.viewer-hint.is-dismissed {
+  opacity: 0;
+}
+
+/* ===== Skin (Gray / Original), bottom-right corner ======================= */
+
+/* The corner holds the control and, while Original is prepared or has
+   failed, a small status beside it (wide: on its left; phones: above it).
+   Only the pill and the status take the pointer, so rotating and picking
+   the body right next to them work as before. Nothing here is measured by
+   the camera's framing.
+
+   .skin-room is the area the control may use: the whole view on wide
+   screens; on phones, the part the panel leaves uncovered below the side
+   labels. Where that is too short, the control gives way (as Milestone 4's
+   small body figure above the panel does), so it never covers the side
+   labels, Front | Back or Whole body. */
+.viewer-chrome > .skin-room {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  container: skin-room / size;
+}
+
+.skin-room > .skin-control {
+  position: absolute;
+  right: 29px;
+  bottom: 28px;
+  display: flex;
+  gap: 10px;
+  /* The pill stays put; a taller status grows upward beside it, and never
+     closer than 12 px to the view's left edge. */
+  align-items: flex-end;
+  justify-content: flex-end;
+  max-width: calc(100% - 41px);
+  pointer-events: none;
+}
+
+.skin-capsule,
+.skin-status {
+  pointer-events: auto;
+}
+
+/* Dark glass, as the wide Front | Back control; mint for the chosen skin. */
+.skin-capsule {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  background: rgb(6 30 41 / 78%);
+  border-radius: var(--r-pill);
+  box-shadow: inset 0 0 0 1px rgb(202 224 230 / 75%), 0 4px 14px rgb(2 18 24 / 30%);
+  backdrop-filter: blur(6px);
+}
+
+.skin-word {
+  padding: 0 6px 0 16px;
+  font-size: var(--fs-14);
+  font-weight: 600;
+  color: var(--on-stage-2);
+}
+
+.skin-option {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  min-width: 72px;
+  height: 42px;
+  padding: 0 var(--sp-4);
+  font-size: var(--fs-15);
+  font-weight: 600;
+  color: #e4f9ff;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-pill);
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.skin-option[aria-pressed="true"] {
+  color: #000708;
+  background: #d2f5ef;
+}
+
+.skin-option:hover:not([aria-pressed="true"]) {
+  background: rgb(255 255 255 / 10%);
+}
+
+/* After a failure (with or without room for the status beside it). */
+.skin-alert-mark {
+  flex: none;
+  color: #b42318;
+}
+
+.skin-spinner {
+  display: inline-block;
+  flex: none;
+  width: 11px;
+  height: 11px;
+  border: 2px solid currentcolor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: skin-spin 0.8s linear infinite;
+}
+
+@keyframes skin-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* The status: small, in the stage's glass, beside the control (never over
+   the middle of the body; the location label keeps clear of it). */
+.skin-status {
+  display: grid;
+  gap: 6px;
+  max-width: 260px;
+  padding: 8px 12px;
+  font-size: var(--fs-13);
   line-height: 1.35;
+  color: var(--on-stage);
+  background: var(--stage-glass);
+  border: 1px solid rgb(209 230 239 / 18%);
+  border-radius: 12px;
+  box-shadow: var(--shadow-3);
+  backdrop-filter: blur(10px);
 }
 
-.sidebar-footer p {
-  margin: 0;
-  font-size: inherit;
-  line-height: inherit;
+.skin-status[data-state="error"] {
+  gap: 8px;
 }
 
-.sidebar-footer p + p {
-  margin-top: 7px;
+.skin-status-text {
+  display: block;
 }
 
-.disclaimer-title {
-  color: #d5dae1;
-  font-size: 0.6rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+.skin-status-icon {
+  margin-right: 6px;
+  vertical-align: -3px;
+  color: #ffb59f;
 }
 
-.disclaimer-text {
-  color: #9da6b2;
-  font-size: 0.6rem;
-  line-height: 1.4;
+.skin-retry {
+  justify-self: start;
+  min-height: 32px;
+  padding: 0 14px;
+  font-size: var(--fs-14);
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  background: var(--brand);
+  border: 0;
+  border-radius: var(--r-md);
 }
 
-.credits-text,
-.contact-text {
-  color: #858f9b;
-  font-size: 0.58rem;
+.skin-retry:hover {
+  background: var(--brand-2);
 }
 
-.contact-text a {
-  color: #f5b041;
-  text-decoration: none;
-  transition: color 120ms ease;
+/* A real fraction only while textures are sent; otherwise "working". */
+.skin-progress {
+  position: relative;
+  display: block;
+  height: 3px;
+  overflow: hidden;
+  background: rgb(255 255 255 / 14%);
+  border-radius: var(--r-pill);
 }
 
-.contact-text a:hover {
-  color: #f8c471;
-  text-decoration: underline;
+.skin-progress > span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  background: linear-gradient(90deg, #4fb6a6, #9fe3d6);
+  border-radius: inherit;
+  transition: width 120ms linear;
 }
 
-.contact-text a:focus-visible {
-  outline: 2px solid #f59e0b;
-  outline-offset: 3px;
-  border-radius: 2px;
+.skin-progress.is-indeterminate > span {
+  width: 36%;
+  animation: progress-slide 1.3s ease-in-out infinite;
 }
 
-@media (max-width: 900px) {
-  .app-shell {
-    grid-template-columns: minmax(0, 1fr) 290px;
+/* The drag / zoom hint makes way at once while the skin is being prepared
+   or has failed (fading, it would be drawn across the status; the busy pill
+   is also a little wider). */
+.viewer-chrome:has(.skin-status, .skin-spinner, .skin-alert-mark) .viewer-hint {
+  visibility: hidden;
+  opacity: 0;
+}
+
+/* Phones: on the right, riding 10 px above the panel's top edge (opposite
+   the small body figure) and moving with it; hidden while the panel covers
+   the view or a detail editor is open. The status sits above the pill.
+   The room starts below Front | Back and Whole body (13 and 11 px from the
+   top, 44 px tall) and ends at the panel; the side labels take its first
+   40 px (64 px from the top, two lines). */
+.viewer-narrow .viewer-chrome > .skin-room {
+  top: calc(var(--viewer-top, 0px) + 60px);
+  bottom: var(--sheet-cover, 0px);
+  transition: top 240ms ease, bottom 340ms cubic-bezier(0.22, 0.9, 0.24, 1);
+}
+
+.stage:has(.sheet.is-dragging) .viewer-narrow .viewer-chrome > .skin-room {
+  transition: top 240ms ease;
+}
+
+.viewer-narrow .skin-room > .skin-control {
+  right: 12px;
+  bottom: 10px;
+  max-width: calc(100% - 24px);
+  /* Never above the room: a long status scrolls instead. */
+  max-height: calc(100% - 10px);
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.app[data-sheet="full"] .viewer-narrow .skin-control,
+.viewer-area[inert] .viewer-narrow .skin-control {
+  visibility: hidden;
+}
+
+.viewer-narrow .skin-word {
+  padding-left: 14px;
+  font-size: var(--fs-13);
+}
+
+.viewer-narrow .skin-option {
+  min-width: 0;
+  height: 31px;
+  padding: 0 14px;
+  font-size: var(--fs-14);
+}
+
+.viewer-narrow .skin-status {
+  max-width: 200px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Most phones: the failure note puts "Try again" beside its text, so it
+   stays low and clear of the middle of the view (and of the small body
+   figure on the left). */
+@container viewer (min-width: 21.25rem) {
+  .viewer-narrow .skin-status[data-state="error"] {
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 10px;
+    align-items: center;
+    max-width: min(264px, calc(100cqw - 128px));
+  }
+}
+
+/* The pill keeps clear of the side labels: with less room than that, the
+   control gives way until the panel is lowered. The "Preparing" note gives
+   way earlier (the spinner on Original still shows that it is preparing).
+   With less room than a full failure note needs to stay low, the note
+   keeps only "Try again", right above the pill on the right (the spoken
+   alert, the description and the mark on Original carry the message), so
+   it stays clear of the selected location in the middle of the view and of
+   the small body figure on the left. */
+@container skin-room (height < 92px) {
+  .viewer-narrow .skin-control {
+    display: none;
+  }
+}
+
+@container skin-room (height < 176px) {
+  .viewer-narrow .skin-status[data-state="preparing"] {
+    display: none;
+  }
+}
+
+@container skin-room (height < 300px) {
+  .viewer-narrow .skin-status[data-state="error"] {
+    display: block;
+    max-width: none;
+    padding: 0;
+    overflow: visible;
+    background: none;
+    border: 0;
+    box-shadow: none;
+    backdrop-filter: none;
   }
 
-  .sidebar {
-    width: 290px;
-    min-width: 290px;
-    padding: 18px;
+  .viewer-narrow .skin-status[data-state="error"] .skin-status-text {
+    display: none;
   }
 }
 
-@media (max-width: 650px) {
-  body {
-    overflow: auto;
+@media (max-width: 360px) {
+  .viewer-narrow .skin-word {
+    display: none;
+  }
+}
+
+/* Narrower wide viewers: the drag / zoom hint is centred in the room left
+   of the control (8 px from the view's edge and from the pill) and wraps
+   there, staying below the corner body figure; on the narrowest it is a
+   little smaller, without its icon. The corner figure makes way while a
+   status shows (the status reaches it here), and on the narrowest the word
+   "Skin" gives way. */
+@container viewer (max-width: 50rem) {
+  .viewer-wide .viewer-hint {
+    left: calc((100% - 236px) / 2);
+    max-width: calc(100% - 252px);
+    text-align: center;
+    white-space: normal;
   }
 
-  .app-shell {
-    grid-template-columns: 1fr;
-    grid-template-rows: minmax(440px, 1fr) auto;
-    height: 100%;
+  .viewer-wide .viewer-chrome:has(.skin-status) .viewer-locator {
+    visibility: hidden;
+  }
+}
+
+@container viewer (max-width: 34rem) {
+  .viewer-wide .skin-word {
+    display: none;
+  }
+
+  .viewer-wide .viewer-hint {
+    left: calc((100% - 187px) / 2);
+    max-width: calc(100% - 203px);
+  }
+}
+
+@container viewer (max-width: 26rem) {
+  .viewer-wide .viewer-hint {
+    font-size: var(--fs-15);
+  }
+
+  .viewer-wide .viewer-hint > svg {
+    display: none;
+  }
+}
+
+/* Short viewers (landscape phones): left of the zoom row, smaller. The
+   status stacks above the pill (beside it, it would be squeezed) and stays
+   below the side labels (112 px from the top, one line; a long one
+   scrolls); the corner body figure makes way while it shows. The failure
+   note keeps only "Try again" (the spoken alert, the description and the
+   mark on Original carry the message): stacked, a full note would cover the
+   selected location in the middle of the view. On the shortest, the
+   "Preparing" note gives way (the spinner stays). */
+@container viewer (max-height: 32.5rem) {
+  .viewer-wide .skin-room > .skin-control {
+    right: 152px;
+    bottom: 14px;
+    max-width: calc(100% - 164px);
+    max-height: calc(100% - 146px);
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+  }
+
+  .viewer-wide .skin-status {
+    max-width: min(260px, calc(100cqw - 164px));
+    min-height: 0;
     overflow-y: auto;
   }
 
-  .viewer-panel {
-    min-height: 440px;
-  }
-
-  .sidebar {
-    width: 100%;
-    min-width: 0;
-    height: auto;
-    padding: 18px;
+  .viewer-wide .skin-status[data-state="error"] {
+    display: block;
+    max-width: none;
+    padding: 0;
     overflow: visible;
-    border-top: 1px solid #484d55;
-    border-left: none;
+    background: none;
+    border: 0;
+    box-shadow: none;
+    backdrop-filter: none;
   }
 
-  .sidebar-footer {
-    margin-top: 24px;
+  .viewer-wide .skin-status[data-state="error"] .skin-status-text {
+    display: none;
+  }
+
+  .viewer-wide .viewer-chrome:has(.skin-status) .viewer-locator {
+    visibility: hidden;
+  }
+
+  .viewer-wide .skin-word {
+    display: none;
+  }
+
+  .viewer-wide .skin-option {
+    min-width: 0;
+    height: 36px;
+    padding: 0 12px;
+  }
+}
+
+@container viewer (max-height: 17.5rem) {
+  .viewer-wide .skin-status[data-state="preparing"] {
+    display: none;
+  }
+
+  /* No note shown, so the corner figure stays. */
+  .viewer-wide .viewer-chrome:has(.skin-status[data-state="preparing"]) .viewer-locator {
+    visibility: visible;
+  }
+}
+
+/* Very small short viewers: above the zoom row. The controls leave no room
+   for a status: the spinner (preparing) or the alert mark (failure) on
+   Original stands in for it, and pressing Original again tries again (the
+   corner figure stays). Shorter than 15rem, the toolbar wraps down to the
+   pill's height: the control gives way, as on short phones. */
+@container viewer (max-width: 22.5rem) and (max-height: 32.5rem) {
+  .viewer-wide .skin-room > .skin-control {
+    right: 14px;
+    bottom: 60px;
+    max-width: calc(100% - 28px);
+  }
+
+  .viewer-wide .skin-status[data-state] {
+    display: none;
+  }
+
+  .viewer-wide .viewer-chrome:has(.skin-status[data-state]) .viewer-locator {
+    visibility: visible;
+  }
+}
+
+@container viewer (max-width: 22.5rem) and (max-height: 15rem) {
+  .viewer-wide .skin-control {
+    display: none;
+  }
+}
+
+/* Touch: at least 44 px to tap (the pill stays visually small). */
+@media (pointer: coarse) {
+  .skin-option {
+    position: relative;
+  }
+
+  .skin-option::after {
+    position: absolute;
+    inset: -3px 0;
+    content: "";
+  }
+
+  .viewer-narrow .skin-option {
+    height: 38px;
+  }
+
+  .skin-retry {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skin-spinner,
+  .skin-progress.is-indeterminate > span {
+    animation: none;
+  }
+
+  /* A still, faint full bar for "working" (a part-filled bar would read as
+     progress, and could look like going backwards after a full bar). */
+  .skin-progress.is-indeterminate > span {
+    width: 100%;
+    opacity: 0.35;
+  }
+
+  .skin-progress > span,
+  .viewer-narrow .viewer-chrome > .skin-room {
+    transition: none;
+  }
+}
+
+/* Loading and failure. */
+.viewer-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: grid;
+  place-items: center;
+  padding: var(--sp-4);
+}
+
+/* Phones: status cards sit in the part of the stage the panel leaves
+   uncovered, below the controls (--sheet-cover is set by the panel), and
+   scroll if that is too short. */
+.viewer-narrow .viewer-overlay {
+  top: var(--viewer-top, 0px);
+  bottom: var(--sheet-cover, 0px);
+  place-items: safe center;
+  padding-top: 60px;
+  overflow-y: auto;
+}
+
+.status-card {
+  display: grid;
+  gap: var(--sp-2);
+  width: min(360px, 100%);
+  padding: var(--sp-5);
+  color: var(--on-stage);
+  background: var(--stage-glass);
+  border: 1px solid rgb(209 230 239 / 18%);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-3);
+  backdrop-filter: blur(10px);
+}
+
+.status-title {
+  font-size: var(--fs-17);
+  font-weight: 600;
+}
+
+.status-detail {
+  font-size: var(--fs-14);
+  font-variant-numeric: tabular-nums;
+}
+
+.status-hint {
+  font-size: var(--fs-14);
+  color: var(--on-stage-2);
+}
+
+.status-icon {
+  color: #ffb59f;
+}
+
+.status-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+}
+
+.progress {
+  position: relative;
+  height: 6px;
+  overflow: hidden;
+  background: rgb(255 255 255 / 14%);
+  border-radius: var(--r-pill);
+}
+
+.progress-bar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  background: linear-gradient(90deg, #4fb6a6, #9fe3d6);
+  border-radius: inherit;
+  transition: width 200ms ease;
+}
+
+.progress.is-indeterminate .progress-bar {
+  width: 36%;
+  animation: progress-slide 1.3s ease-in-out infinite;
+}
+
+@keyframes progress-slide {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(300%); }
+}
+
+/* ===== Selection label (on the body) ==================================== */
+
+.selection-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+
+.selection-overlay[data-visible="true"] {
+  opacity: 1;
+}
+
+/* Little room: the name alone. No room anywhere clear of the spot: the dot
+   alone. */
+.selection-overlay[data-short="true"] .selection-label-separator,
+.selection-overlay[data-short="true"] .selection-label-area {
+  display: none;
+}
+
+.selection-overlay[data-label="hidden"] .selection-label,
+.selection-overlay[data-label="hidden"] .selection-leader {
+  visibility: hidden;
+}
+
+.selection-leader {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.selection-leader line {
+  stroke: #fff;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+}
+
+.selection-dot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 9px;
+  height: 9px;
+  margin: -4.5px 0 0 -4.5px;
+  background: var(--sel-dot);
+  border-radius: 50%;
+  box-shadow: 0 0 0 2.5px rgb(255 223 220 / 55%), 0 1px 4px rgb(0 0 0 / 45%);
+}
+
+.viewer-wide .selection-dot {
+  width: 11px;
+  height: 11px;
+  margin: -5.5px 0 0 -5.5px;
+}
+
+.selection-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  width: max-content;
+  max-width: min(300px, 72vw);
+  padding: 4px 13px 5px;
+  font-size: var(--fs-15);
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--pill-text);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  background: var(--pill-fill);
+  border: 2px solid var(--sel);
+  border-radius: 13px;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 28%);
+}
+
+.viewer-wide .selection-label {
+  padding: 8px 16px 9px;
+  font-size: var(--fs-17);
+  /* 500 resolves to the Semibold face on Windows; the board is regular. */
+  font-weight: 400;
+  border-width: 2.5px;
+  border-radius: 16px;
+}
+
+.selection-label-area {
+  color: var(--pill-text);
+}
+
+/* Phones, while an editor is open: "Patella ·" / "Right kneecap". */
+.viewer-narrow .selection-label:has(.selection-label-area) {
+  display: block;
+  padding: 7px 14px 8px;
+  font-size: var(--fs-14);
+  border-radius: 12px;
+}
+
+.viewer-narrow .selection-label:has(.selection-label-area) .selection-label-name,
+.viewer-narrow .selection-label-separator {
+  font-weight: 600;
+}
+
+.viewer-narrow .selection-label-area {
+  display: block;
+  margin-top: 2px;
+}
+
+.hover-label-anchor {
+  pointer-events: none;
+}
+
+.hover-label {
+  padding: 3px 10px 4px;
+  margin: -40px 0 0 12px;
+  font-size: var(--fs-14);
+  font-weight: 500;
+  color: var(--pill-text);
+  white-space: nowrap;
+  background: rgb(4 22 30 / 78%);
+  border: 1px solid rgb(209 230 239 / 45%);
+  border-radius: 10px;
+}
+
+/* ===== Mini locator ====================================================== */
+
+.mini-locator {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: center;
+  padding: 6px 8px 4px;
+  color: var(--on-stage);
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-md);
+}
+
+button.mini-locator {
+  cursor: pointer;
+}
+
+/* The corner figures (desktop viewer, above the phone panel): only the
+   figure's own column takes clicks, so the empty corners of the arms-out
+   picture let clicks through to the body behind. Keyboard use is the same. */
+.viewer-chrome > .viewer-locator,
+.sheet-above,
+.viewer-locator button.mini-locator,
+.sheet-above button.mini-locator {
+  pointer-events: none;
+}
+
+.viewer-locator .mini-locator-figure::after,
+.sheet-above .mini-locator-figure::after {
+  position: absolute;
+  inset: 0 34%;
+  cursor: pointer;
+  content: "";
+  pointer-events: auto;
+}
+
+button.mini-locator:hover {
+  background: rgb(255 255 255 / 7%);
+}
+
+.mini-locator-figure {
+  position: relative;
+  display: block;
+  height: 92px;
+}
+
+.viewer-locator .mini-locator-figure {
+  height: 196px;
+}
+
+.mini-locator-figure img {
+  display: block;
+  width: auto;
+  height: 100%;
+  user-select: none;
+}
+
+.mini-locator-dot {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  background: #f0927d;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgb(240 146 125 / 35%), 0 0 8px 2px rgb(240 146 125 / 55%);
+}
+
+.viewer-locator .mini-locator-dot {
+  width: 12px;
+  height: 15px;
+  margin: -7.5px 0 0 -6px;
+  background: #f88f7b;
+  border-radius: 45%;
+}
+
+/* The patient's sides under the figure ("R L"; "L Back R" for the back
+   picture, which is mirrored). */
+.mini-locator-sides {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  justify-content: space-between;
+  min-width: 26px;
+  font-size: var(--fs-12);
+  font-weight: 600;
+  line-height: 1;
+  color: #c6d5dd;
+}
+
+.mini-locator-face {
+  font-weight: 500;
+  color: #9fb4bf;
+}
+
+.viewer-locator .mini-locator-sides {
+  min-width: 34px;
+  font-size: var(--fs-13);
+}
+
+.mini-locator-thumb {
+  flex: none;
+  justify-content: center;
+  width: 46px;
+  height: 58px;
+  padding: 4px;
+  /* A light tile, as on the board (and like the search thumbnails). */
+  background: linear-gradient(180deg, #f1f2f2, #e3e7e9);
+  border-radius: 11px;
+}
+
+.mini-locator-thumb .mini-locator-figure {
+  height: 50px;
+}
+
+/* ===== Search ============================================================ */
+
+.search-host-narrow {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 30;
+}
+
+.location-search {
+  position: relative;
+}
+
+.search-bar {
+  display: flex;
+  gap: var(--sp-4);
+  align-items: center;
+}
+
+.location-search-narrow .search-bar {
+  padding: 6px 14px 12px;
+  background: var(--surface);
+}
+
+.search-control {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  min-width: 0;
+}
+
+.search-icon {
+  position: absolute;
+  left: 16px;
+  color: #4d4c4f;
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  height: 42px;
+  padding: 0 40px 0 50px;
+  font-size: var(--fs-17);
+  color: var(--ink);
+  background: var(--field);
+  border: 1px solid #d8dadb;
+  border-radius: var(--r-md);
+  outline: none;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.location-search-wide .search-input {
+  font-size: var(--fs-18);
+  background: #fdfdfd;
+  border-color: transparent;
+  border-radius: 15px;
+  box-shadow: 0 6px 18px rgb(2 18 24 / 32%);
+}
+
+.search-input::placeholder {
+  color: #565d6c;
+  opacity: 1;
+}
+
+.search-input:focus {
+  border-color: var(--brand);
+  box-shadow: var(--focus-ring);
+}
+
+.location-search-wide .search-input:focus {
+  box-shadow: 0 0 0 3px rgb(159 227 214 / 60%), 0 6px 18px rgb(2 18 24 / 32%);
+}
+
+.search-input:disabled {
+  color: var(--ink-4);
+  background: var(--surface-2);
+}
+
+.search-clear {
+  position: absolute;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  color: var(--ink-3);
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+}
+
+.search-clear:hover {
+  color: var(--ink);
+  background: var(--surface-3);
+}
+
+.search-cancel {
+  flex: none;
+  height: 44px;
+  padding: 0;
+  font-size: var(--fs-17);
+  font-weight: 600;
+  color: var(--brand-ink);
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+}
+
+.app[data-layout="narrow"] .search-panel-narrow {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  left: 0;
+  height: calc(100dvh - var(--header-h) - 60px);
+}
+
+.search-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(14 40 50 / 62%);
+}
+
+.search-panel-narrow .search-card {
+  position: relative;
+  max-height: calc(100% - var(--keyboard-inset, 0px) - 18px);
+  margin: 6px 10px 0;
+  border-radius: var(--r-md);
+}
+
+.search-panel-wide {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: max(100%, 420px);
+}
+
+.search-panel-wide .search-card {
+  max-height: min(64vh, 560px);
+  border-radius: var(--r-lg);
+}
+
+/* Landscape phones with the keyboard up: the card ends above the keyboard
+   (set by LocationSearch) and rows are compact enough to read there. */
+/* Group titles stay for screen readers only (they name each group). */
+.search-panel-wide.is-cramped .search-section-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.search-panel-wide.is-cramped .search-option {
+  gap: 10px;
+  min-height: 44px;
+  padding: 4px 12px;
+}
+
+.search-panel-wide.is-cramped .search-option:not(.is-static) .locator-thumb {
+  display: none;
+}
+
+.search-panel-wide.is-cramped .search-option-name {
+  font-size: var(--fs-16);
+}
+
+.search-panel-wide.is-cramped .search-option-description,
+.search-panel-wide.is-cramped .search-option-match {
+  overflow: hidden;
+  font-size: var(--fs-13);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-card {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  color: var(--ink);
+  background: var(--surface);
+  box-shadow: var(--shadow-3);
+}
+
+.search-list {
+  padding: 0 0 var(--sp-2);
+}
+
+.search-count {
+  padding: 12px 16px 0;
+  font-size: var(--fs-13);
+  color: var(--ink-3);
+}
+
+.search-note {
+  padding: 14px 16px 4px;
+  font-size: var(--fs-15);
+  color: var(--ink-2);
+}
+
+.search-section-title {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 12px 16px 6px;
+  font-size: var(--fs-13);
+  font-weight: 600;
+  color: var(--ink-3);
+  letter-spacing: 0.02em;
+  background: var(--surface);
+}
+
+.search-option {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  min-height: 72px;
+  padding: 8px 14px 8px 15px;
+  cursor: pointer;
+}
+
+.search-option + .search-option {
+  border-top: 1px solid var(--line);
+}
+
+.search-option.is-active {
+  background: var(--brand-tint);
+  box-shadow: inset 3px 0 0 var(--brand);
+}
+
+.search-option.is-static {
+  cursor: default;
+}
+
+.search-option-text {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+}
+
+.search-option-name {
+  font-size: var(--fs-18);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.search-option.is-static .search-option-name {
+  font-size: var(--fs-22);
+}
+
+.search-option-description {
+  font-size: var(--fs-15);
+  color: #3a3c3c;
+}
+
+.search-option-match {
+  font-size: var(--fs-13);
+  color: var(--brand-ink);
+}
+
+.search-option.is-current .search-option-name::after {
+  margin-left: var(--sp-2);
+  font-size: var(--fs-13);
+  font-weight: 600;
+  color: var(--sel-ink);
+  content: "Selected";
+}
+
+.search-option-chevron {
+  flex: none;
+  color: #4d4c4f;
+}
+
+.search-empty {
+  padding: var(--sp-5) var(--sp-4);
+  font-size: var(--fs-15);
+  color: var(--ink-3);
+}
+
+.locator-thumb {
+  position: relative;
+  flex: none;
+  width: 52px;
+  height: 60px;
+  overflow: hidden;
+  background-color: #eff0f0;
+  background-repeat: no-repeat;
+  border-radius: 10px;
+}
+
+.locator-thumb.is-placeholder {
+  background: linear-gradient(180deg, #f1f2f2, #e6e9ea);
+}
+
+.locator-thumb-dot {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  margin: -5.5px 0 0 -5.5px;
+  background: #f68d78;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgb(246 141 120 / 30%);
+}
+
+.search-side-step {
+  display: grid;
+  gap: 14px;
+  padding: 6px 0 14px;
+}
+
+.search-side-step .search-option {
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.side-step-title {
+  padding: 0 16px;
+  font-size: var(--fs-18);
+  font-weight: 700;
+}
+
+.side-step-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 11px;
+  padding: 0 16px;
+}
+
+.side-step-back {
+  justify-self: start;
+  margin: 0 12px;
+}
+
+/* ===== Panel (wide) ====================================================== */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--surface);
+  box-shadow: inset 5px 0 5px -5px rgb(10 30 50 / 8%);
+  container: panel / inline-size;
+}
+
+.panel-header {
+  flex: none;
+  padding: 16px 22px 0 30px;
+}
+
+.panel-body {
+  flex: 1;
+  min-height: 0;
+  padding: 0 22px 28px 30px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* ===== Sheet (narrow) ==================================================== */
+
+.sheet {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-radius: var(--r-sheet) var(--r-sheet) 0 0;
+  box-shadow: var(--shadow-sheet);
+  transition:
+    transform 340ms cubic-bezier(0.22, 0.9, 0.24, 1),
+    border-radius 340ms cubic-bezier(0.22, 0.9, 0.24, 1);
+  will-change: transform;
+}
+
+/* Full height: the list starts under the header, with square corners and a
+   hairline (no dark viewer showing at the corners). */
+.sheet.sheet-full {
+  border-radius: 0;
+  box-shadow: inset 0 1px 0 var(--line);
+}
+
+.sheet.is-dragging,
+.sheet.no-motion {
+  transition: none;
+}
+
+.sheet.is-hidden {
+  visibility: hidden;
+  transition: transform 300ms ease, visibility 0s linear 300ms;
+}
+
+.sheet-above {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 14px;
+}
+
+.sheet-header {
+  flex: none;
+  padding: 0 20px 4px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.sheet.is-dragging .sheet-header {
+  cursor: grabbing;
+}
+
+.sheet-grabber-row {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  height: 28px;
+}
+
+.sheet-grabber {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 26px;
+  padding: 0;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-pill);
+}
+
+.sheet-grabber-bar {
+  width: 44px;
+  height: 5px;
+  background: var(--grabber);
+  border-radius: var(--r-pill);
+}
+
+.sheet-grabber:hover .sheet-grabber-bar {
+  background: #b6bcc0;
+}
+
+.sheet-action {
+  position: absolute;
+  top: 8px;
+  right: -4px;
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  height: 30px;
+  padding: 0 12px 0 10px;
+  font-size: var(--fs-16);
+  font-weight: 600;
+  color: #0f5c4f;
+  cursor: pointer;
+  background: var(--brand-tint);
+  border: 0;
+  border-radius: 10px;
+}
+
+.sheet-action:hover {
+  background: var(--brand-soft);
+}
+
+.sheet-body {
+  position: relative;
+  flex: none;
+  height: var(--sheet-body-height, 0px);
+  padding: 0 20px calc(var(--sp-6) + env(safe-area-inset-bottom));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.sheet-compact .sheet-body {
+  overflow: hidden;
+}
+
+/* ===== Location header =================================================== */
+
+.location-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0 14px;
+  align-items: start;
+}
+
+.location-header.is-empty {
+  display: block;
+  padding: 10px 0 14px;
+}
+
+.panel-header .location-header.is-empty {
+  padding: 10px 0 18px;
+}
+
+.location-prompt {
+  font-size: var(--fs-17);
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--ink);
+  text-align: center;
+}
+
+.panel .location-prompt {
+  font-family: var(--font-display);
+  font-size: var(--fs-24);
+  font-weight: 700;
+  text-align: left;
+}
+
+.location-prompt-meta {
+  margin-top: 8px;
+  font-size: var(--fs-14);
+  color: #3d3f3f;
+  text-align: center;
+}
+
+.panel .location-prompt-meta {
+  text-align: left;
+}
+
+.location-icon {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 34px;
+  margin-top: 2px;
+  color: var(--sel-pin);
+}
+
+.panel .location-icon {
+  width: 48px;
+  height: 48px;
+  margin-top: 2px;
+  color: #0e7570;
+  background: var(--mint-tile);
+  border-radius: 11px;
+}
+
+.location-identity {
+  min-width: 0;
+}
+
+.location-name {
+  font-family: var(--font-display);
+  font-size: var(--fs-24);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.panel .location-name {
+  font-size: var(--fs-28);
+  line-height: 1.12;
+}
+
+.location-subtitle {
+  margin-top: 4px;
+  font-size: var(--fs-16);
+  color: var(--ink-2);
+}
+
+.panel .location-subtitle {
+  margin-top: 4px;
+  font-size: var(--fs-18);
+}
+
+.location-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+  padding-top: 4px;
+}
+
+.panel .location-actions {
+  gap: 0;
+  padding-top: 0;
+}
+
+.panel .location-actions .link-button {
+  min-height: 30px;
+}
+
+.location-side {
+  grid-column: 2 / 4;
+  margin-top: 10px;
+}
+
+.side-switch {
+  display: inline-flex;
+  padding: 2px;
+  background: var(--surface-3);
+  border-radius: var(--r-pill);
+}
+
+.side-switch-option {
+  min-width: 62px;
+  height: 30px;
+  padding: 0 12px;
+  font-size: var(--fs-14);
+  font-weight: 600;
+  color: var(--ink-2);
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-pill);
+}
+
+.side-switch-option[aria-pressed="true"] {
+  color: var(--brand-strong);
+  background: var(--surface);
+  box-shadow: var(--shadow-1), inset 0 0 0 1.5px var(--brand-ink);
+}
+
+.sheet .side-switch-option {
+  min-width: 52px;
+  height: 28px;
+  padding: 0 10px;
+}
+
+/* ===== Panel content ===================================================== */
+
+.panel-content {
+  display: grid;
+}
+
+.nearby {
+  padding: 2px 0 8px;
+}
+
+.panel .nearby {
+  padding: 4px 0 10px;
+}
+
+.nearby-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nearby-row > .side-switch {
+  margin-left: auto;
+}
+
+.nearby-toggle {
+  min-height: 30px;
+  padding-left: 0;
+  font-size: var(--fs-15);
+  white-space: nowrap;
+}
+
+.panel .nearby-toggle {
+  font-size: var(--fs-16);
+  font-weight: 500;
+}
+
+.nearby-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 6px;
+  font-size: var(--fs-12);
+  font-weight: 700;
+  color: var(--chip-ink);
+  background: var(--brand-soft);
+  border-radius: var(--r-pill);
+}
+
+.nearby-chevron {
+  transition: transform 160ms ease;
+}
+
+.nearby-chevron.is-open {
+  transform: rotate(90deg);
+}
+
+.nearby-list {
+  margin-top: 8px;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 34px;
+  padding: 5px 12px;
+  font-size: var(--fs-15);
+  font-weight: 500;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-pill);
+}
+
+.chip:hover {
+  background: var(--surface-2);
+  border-color: var(--brand-outline);
+}
+
+.chip-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  font-size: var(--fs-12);
+  font-weight: 600;
+  color: var(--ink-2);
+  background: var(--surface-3);
+  border-radius: var(--r-pill);
+}
+
+.chip-more {
+  color: var(--brand-ink);
+  border-style: dashed;
+}
+
+/* Case details. */
+.case-controls {
+  display: grid;
+  gap: 14px;
+  padding: 8px 0 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.panel .case-controls {
+  gap: 14px;
+  padding: 14px 0 18px;
+  border-top: 1px solid var(--line-faint);
+  border-bottom-color: var(--line-faint);
+}
+
+.case-controls-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px var(--sp-3);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.case-controls-head:has(> .visually-hidden:only-child) {
+  display: contents;
+}
+
+.section-title {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  align-items: center;
+  font-family: var(--font-display);
+  font-size: var(--fs-26);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.optional-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 11px;
+  font-family: var(--font-sans);
+  font-size: var(--fs-14);
+  font-weight: 600;
+  letter-spacing: 0;
+  color: #08101c;
+  background: var(--badge);
+  border-radius: 7px;
+}
+
+.detail-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.detail-chip {
+  display: inline-flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--chip-h);
+  padding: 0 14px 0 19px;
+  font-size: var(--fs-17);
+  font-weight: 500;
+  color: var(--ink-2);
+  cursor: pointer;
+  background: var(--surface);
+  border: 1.5px dashed #c5cbce;
+  border-radius: var(--r-pill);
+  transition: background-color 140ms ease, border-color 140ms ease;
+}
+
+.detail-chip:hover {
+  border-color: var(--brand-outline);
+}
+
+.detail-chip.is-set {
+  color: var(--chip-ink);
+  background: var(--brand-soft);
+  border: 1px solid var(--brand-line);
+}
+
+.detail-chip.is-set:hover {
+  background: var(--brand-soft-2);
+}
+
+.detail-chip-chevron {
+  flex: none;
+}
+
+.panel .detail-chips {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 11px;
+}
+
+.panel .detail-chip {
+  min-height: 44px;
+  padding: 0 20px 0 23px;
+  font-size: var(--fs-18);
+  font-weight: 400;
+  border-radius: 20px;
+}
+
+.panel .detail-chip.is-set {
+  color: #084947;
+  background: #d4f2ef;
+  border-color: transparent;
+}
+
+.swelling-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.swelling-text {
+  font-size: var(--fs-15);
+  color: var(--ink-2);
+}
+
+.panel .swelling-text {
+  font-size: var(--fs-16);
+}
+
+.swelling-label {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.panel .swelling-label {
+  font-size: var(--fs-17);
+}
+
+.swelling-value.is-set {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.swelling-reference {
+  color: var(--ink-3);
+}
+
+.swelling-actions {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.link-divider {
+  width: 1.5px;
+  height: 18px;
+  background: #9ba0a8;
+  opacity: 0.7;
+}
+
+.clear-details {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+/* ===== Results =========================================================== */
+
+.results {
+  display: grid;
+  padding-top: 14px;
+}
+
+.panel .results {
+  padding-top: 16px;
+}
+
+.results-head {
+  display: flex;
+  gap: 4px 12px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.results-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-20);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.results-count-number {
+  font-variant-numeric: tabular-nums;
+}
+
+.results-order {
+  flex: none;
+  font-size: var(--fs-14);
+  font-weight: 500;
+  color: #53555b;
+}
+
+.results-context {
+  margin-top: 6px;
+  font-size: var(--fs-14);
+  line-height: 1.3;
+  color: var(--ink-2);
+}
+
+/* Desktop: count circle, "A–Z within groups" under the heading and the
+   context in a column on the right (it wraps; the heading never does). */
+.panel .results {
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 12px;
+}
+
+.panel .results-title {
+  white-space: nowrap;
+}
+
+.panel .results > * {
+  grid-column: 1 / -1;
+}
+
+.panel .results-head {
+  display: grid;
+  grid-column: 1;
+  gap: 4px;
+}
+
+.panel .results-title {
+  font-size: var(--fs-24);
+  line-height: 1.2;
+}
+
+.panel .results-count > [aria-hidden="true"] {
+  display: none;
+}
+
+.panel .results-count-number {
+  display: inline-grid;
+  place-items: center;
+  min-width: 29px;
+  height: 29px;
+  padding: 0 8px;
+  margin-left: 8px;
+  font-family: var(--font-sans);
+  font-size: var(--fs-17);
+  color: #fff;
+  vertical-align: 3px;
+  background: var(--count);
+  border-radius: var(--r-pill);
+}
+
+.panel .results-order {
+  font-size: var(--fs-16);
+  font-weight: 400;
+  line-height: 1.3;
+  color: #57606d;
+}
+
+.panel .results-context {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  max-width: 290px;
+  margin-top: 2px;
+  font-size: var(--fs-13);
+  color: var(--ink-3);
+  text-align: right;
+}
+
+.results-hint {
+  margin-top: 12px;
+  font-size: var(--fs-14);
+  color: var(--ink-3);
+}
+
+.results-message {
+  margin-top: 12px;
+  font-size: var(--fs-15);
+  color: var(--ink-3);
+}
+
+.results-empty {
+  display: grid;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.results-empty-title {
+  font-size: var(--fs-16);
+  font-weight: 600;
+}
+
+.results-empty-label {
+  margin: 12px 0 8px;
+  font-size: var(--fs-14);
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.result-group {
+  margin-top: 22px;
+}
+
+.panel .result-group {
+  margin-top: 18px;
+}
+
+.group-title {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 6px;
+  align-items: center;
+  font-size: var(--fs-17);
+  font-weight: 700;
+}
+
+.panel .group-title {
+  font-size: var(--fs-20);
+  line-height: 1.25;
+}
+
+.group-dot {
+  flex: none;
+  width: 9.5px;
+  height: 9.5px;
+  margin-right: 6px;
+  border-radius: 50%;
+}
+
+.panel .group-dot {
+  margin-right: 9px;
+}
+
+.tone-consistent .group-dot { background: var(--ok); }
+.tone-differs .group-dot { background: var(--warn); }
+.tone-unchecked .group-dot { background: var(--neutral); }
+
+.group-count {
+  margin-left: -2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.group-note {
+  margin-top: 2px;
+  font-size: var(--fs-14);
+  color: var(--ink-2);
+}
+
+.panel .group-note {
+  margin-left: 24px;
+  font-size: var(--fs-16);
+  color: var(--ink-3);
+}
+
+.condition-list {
+  margin-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.panel .condition-list {
+  margin-top: 6px;
+  margin-left: 15px;
+  border-top-color: var(--line-faint);
+}
+
+.tone-neutral .condition-list {
+  margin-top: 12px;
+}
+
+.condition {
+  border-bottom: 1px solid var(--line-faint);
+}
+
+.condition:last-child {
+  border-bottom-color: var(--line);
+}
+
+.condition-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 6px 8px 14px;
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-sm);
+}
+
+.panel .condition-row {
+  min-height: 0;
+  padding: 5px 14px 5px 10px;
+}
+
+/* Phones: the board's row spacing (about 50 px), still a large target. */
+.sheet .condition-row {
+  min-height: 48px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+.sheet .condition-meta {
+  line-height: 1.3;
+}
+
+.condition-row:hover {
+  background: var(--surface-2);
+}
+
+.condition-text {
+  display: grid;
+  flex: 1;
+  gap: 1px;
+  min-width: 0;
+}
+
+.condition-name {
+  font-size: var(--fs-17);
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--ink);
+}
+
+.panel .condition-name {
+  font-size: var(--fs-19);
+  line-height: 1.2;
+}
+
+.condition-meta {
+  font-size: var(--fs-14);
+  color: var(--ink-2);
+}
+
+.panel .condition-meta {
+  font-size: var(--fs-16);
+  line-height: 1.3;
+  color: var(--ink-3);
+}
+
+.meta-differs,
+.panel .meta-differs {
+  color: var(--warn-ink);
+}
+
+.meta-unchecked {
+  color: var(--neutral-ink);
+}
+
+.condition-chevron {
+  flex: none;
+  color: #3a3d42;
+  stroke-width: 1.6;
+  transition: transform 160ms ease;
+}
+
+.sheet .condition-chevron {
+  width: 19px;
+  height: 19px;
+}
+
+.condition.is-open .condition-chevron {
+  transform: rotate(90deg);
+}
+
+.condition-detail {
+  padding: 0 8px 14px 14px;
+}
+
+.detail-list {
+  display: grid;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--surface-2);
+  border-radius: var(--r-md);
+}
+
+.detail-list > div {
+  display: grid;
+  grid-template-columns: 7.2em minmax(0, 1fr);
+  gap: 12px;
+}
+
+.detail-list dt {
+  font-size: var(--fs-14);
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.detail-list dd {
+  display: grid;
+  gap: 2px;
+  font-size: var(--fs-14);
+  color: var(--ink);
+}
+
+.panel .detail-list dt,
+.panel .detail-list dd {
+  font-size: var(--fs-15);
+}
+
+.detail-value {
+  font-weight: 600;
+}
+
+.check-line {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  color: var(--ink-2);
+}
+
+.check-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  transform: translateY(-1px);
+}
+
+.check-consistent .check-dot { background: var(--ok); }
+.check-differs .check-dot { background: var(--warn); }
+.check-not-recorded .check-dot { background: var(--neutral); }
+
+.check-not-entered,
+.check-reference {
+  color: var(--ink-3);
+}
+
+.provenance {
+  margin-top: 8px;
+  font-size: var(--fs-13);
+  color: var(--ink-3);
+}
+
+.about-link {
+  justify-self: start;
+  margin-top: 22px;
+  font-size: var(--fs-16);
+}
+
+.panel .about-link {
+  justify-self: stretch;
+  justify-content: flex-start;
+  padding: 12px 0 0;
+  margin-top: 18px;
+  font-weight: 500;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+}
+
+.results-skeleton {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.skeleton-line {
+  height: 16px;
+  background: linear-gradient(90deg, var(--surface-3), #f6f8f9, var(--surface-3));
+  background-size: 200% 100%;
+  border-radius: var(--r-sm);
+  animation: skeleton 1.4s ease-in-out infinite;
+}
+
+.skeleton-line.short {
+  width: 60%;
+}
+
+@keyframes skeleton {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+.panel-footer {
+  margin-top: 24px;
+  font-size: var(--fs-13);
+  color: var(--ink-3);
+}
+
+/* ===== Notices =========================================================== */
+
+.notice {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  padding: 16px;
+  margin: 12px 0;
+  border-radius: var(--r-md);
+}
+
+.notice-error {
+  background: #fdf0ed;
+  border: 1px solid #f3c9bf;
+}
+
+.notice-title {
+  font-weight: 600;
+}
+
+.notice-text {
+  font-size: var(--fs-14);
+  color: var(--ink-2);
+}
+
+/* ===== Buttons and links ================================================ */
+
+.button {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--control-h);
+  padding: 0 16px;
+  font-size: var(--fs-16);
+  font-weight: 600;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  border-radius: var(--r-md);
+}
+
+.button-primary {
+  color: #fff;
+  background: var(--brand);
+}
+
+.button-primary:hover {
+  background: var(--brand-2);
+}
+
+.button-ghost {
+  color: var(--on-stage);
+  background: transparent;
+  border-color: var(--on-stage-line);
+}
+
+.button-ghost:hover {
+  background: rgb(255 255 255 / 8%);
+}
+
+.button-outline {
+  min-height: 42px;
+  font-size: var(--fs-17);
+  color: #0b594f;
+  background: var(--surface);
+  border-color: var(--brand-outline);
+  border-radius: 11px;
+}
+
+.button-outline:hover {
+  background: var(--brand-tint);
+  border-color: var(--brand);
+}
+
+.link-button {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  min-height: 32px;
+  padding: 2px 4px;
+  font-size: var(--fs-16);
+  font-weight: 600;
+  color: var(--brand-ink);
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-sm);
+}
+
+.panel .link-button {
+  font-weight: 500;
+  color: #1e6c67;
+}
+
+.link-button:hover {
+  color: var(--brand-2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.link-inline {
+  display: inline;
+  min-height: 0;
+  padding: 0;
+  font-size: inherit;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.change-location {
+  white-space: nowrap;
+}
+
+.panel .change-location {
+  font-size: var(--fs-17);
+}
+
+.clear-location,
+.panel .clear-location {
+  font-weight: 500;
+  color: var(--ink-3);
+}
+
+/* ===== Editors =========================================================== */
+
+/* Above the header too: while an editor is open, a tap anywhere outside it
+   just closes it. */
+.editor-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+}
+
+.editor {
+  z-index: 56;
+  color: var(--ink);
+  background: var(--surface);
+  opacity: 0;
+  transition: opacity 180ms ease, transform 280ms cubic-bezier(0.22, 0.9, 0.24, 1);
+}
+
+.editor.is-entered {
+  opacity: 1;
+}
+
+.editor-narrow {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  /* Never taller than the stage above the keyboard; it scrolls instead. */
+  max-height: calc(100% - var(--keyboard-inset, 0px) - 8px);
+  padding: 10px 21px calc(28px + env(safe-area-inset-bottom));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: var(--r-sheet) var(--r-sheet) 0 0;
+  box-shadow: var(--shadow-sheet);
+  transform: translateY(calc(30% - var(--keyboard-inset, 0px)));
+}
+
+.editor-narrow.is-entered {
+  transform: translateY(calc(0px - var(--keyboard-inset, 0px)));
+}
+
+.editor-wide {
+  position: fixed;
+  width: 380px;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 24px);
+  padding: 18px 20px 20px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-3);
+  transform: translateY(-4px);
+}
+
+.editor-wide.is-entered {
+  transform: none;
+}
+
+.editor-grabber {
+  display: block;
+  width: 44px;
+  height: 5px;
+  margin: 0 auto 18px;
+  background: var(--grabber);
+  border-radius: var(--r-pill);
+}
+
+.editor-header {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.editor-heading {
+  min-width: 0;
+}
+
+.editor-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-22);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.editor-wide .editor-title {
+  font-size: var(--fs-20);
+}
+
+.editor-tag {
+  font-family: var(--font-sans);
+  font-size: var(--fs-15);
+  font-weight: 400;
+  letter-spacing: 0;
+  color: #303337;
+}
+
+.editor-subtitle {
+  margin-top: 6px;
+  font-size: var(--fs-15);
+  color: #2f3337;
+}
+
+.editor-done {
+  flex: none;
+  min-height: 36px;
+  padding: 0 4px;
+  margin-top: -2px;
+  font-size: var(--fs-17);
+  font-weight: 600;
+  color: var(--brand-ink);
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-sm);
+}
+
+.editor-done:hover {
+  background: var(--brand-tint);
+}
+
+.editor-body {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.age-stepper {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 62px;
+  padding: 0 11px;
+  border: 1px solid #dbe0df;
+  border-radius: 19px;
+}
+
+.age-stepper:focus-within {
+  border-color: var(--brand);
+  box-shadow: var(--focus-ring);
+}
+
+.stepper-button {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  color: #04060a;
+  cursor: pointer;
+  background: #eef1f0;
+  border: 0;
+  border-radius: 50%;
+}
+
+.stepper-button:hover:not([aria-disabled="true"]) {
+  background: #e0e6e4;
+}
+
+.stepper-button[aria-disabled="true"] {
+  cursor: default;
+  opacity: 0.35;
+}
+
+.age-field {
+  display: flex;
+  flex: 1;
+  gap: 8px;
+  align-items: baseline;
+  justify-content: center;
+  min-width: 0;
+}
+
+.age-input {
+  width: 2.1ch;
+  padding: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-34);
+  font-weight: 700;
+  line-height: 1.1;
+  color: #03060b;
+  text-align: center;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  outline: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.age-input:focus {
+  border-bottom-color: var(--brand);
+}
+
+/* "Under 1 year" (age 0) and "Not specified" (no age) show as words; the
+   number field opens again when tapped (the whole area is its label). */
+.age-field.is-words .age-input {
+  width: 0;
+  border-bottom-width: 0;
+}
+
+.age-field.is-words .age-unit {
+  font-family: var(--font-display);
+  font-size: var(--fs-24);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.age-field.is-words.is-unknown .age-unit {
+  font-family: var(--font-sans);
+  font-size: var(--fs-20);
+  font-weight: 500;
+  color: var(--ink-3);
+}
+
+.age-input[aria-invalid="true"] {
+  color: var(--sel-ink);
+}
+
+.age-unit {
+  font-size: var(--fs-18);
+  color: #40464b;
+  white-space: nowrap;
+}
+
+.editor-hint {
+  font-size: var(--fs-15);
+  color: #313438;
+  text-align: center;
+}
+
+.editor-hint.is-error {
+  font-weight: 500;
+  color: var(--sel-ink);
+}
+
+.editor-choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 13px;
+  margin-top: 16px;
+}
+
+.choice-button {
+  min-height: 42px;
+  padding: 0 12px;
+  font-size: var(--fs-16);
+  font-weight: 400;
+  color: var(--ink);
+  cursor: pointer;
+  background: var(--surface);
+  border: 1px solid #d8dcdb;
+  border-radius: 17px;
+}
+
+.choice-button:hover {
+  border-color: var(--brand-outline);
+}
+
+.choice-button[aria-pressed="true"] {
+  font-weight: 600;
+  color: var(--chip-ink);
+  background: var(--brand-soft);
+  border-color: var(--brand-line);
+}
+
+.choice-list {
+  display: grid;
+  gap: 8px;
+}
+
+.choice-option {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-height: 52px;
+  padding: 8px 16px;
+  cursor: pointer;
+  border: 1px solid #d8dcdb;
+  border-radius: 16px;
+}
+
+.choice-option:hover {
+  border-color: var(--brand-outline);
+}
+
+.choice-option.is-selected {
+  background: var(--brand-soft);
+  border-color: var(--brand-line);
+}
+
+.choice-option:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.choice-text {
+  display: grid;
+  flex: 1;
+  gap: 1px;
+}
+
+.choice-label {
+  font-size: var(--fs-17);
+  font-weight: 600;
+}
+
+.choice-option.is-selected .choice-label {
+  color: var(--chip-ink);
+}
+
+.choice-description {
+  font-size: var(--fs-14);
+  color: var(--ink-3);
+}
+
+.choice-check {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  color: var(--brand);
+}
+
+.editor-note {
+  font-size: var(--fs-14);
+  color: var(--ink-3);
+}
+
+/* ===== Menu ============================================================== */
+
+.app-menu {
+  position: relative;
+}
+
+/* On the "•••" button: something chosen from the menu is in progress (a
+   small turning ring) or needs attention (a red dot). */
+.menu-mark {
+  position: absolute;
+  top: 5px;
+  right: 3px;
+  box-sizing: border-box;
+  width: 12px;
+  height: 12px;
+  pointer-events: none;
+  border-radius: 50%;
+}
+
+.menu-mark[data-mark="busy"] {
+  border: 2px solid var(--brand);
+  border-right-color: transparent;
+  animation: skin-spin 0.8s linear infinite;
+}
+
+.menu-mark[data-mark="alert"] {
+  background: #b42318;
+  border: 2px solid var(--surface);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-mark[data-mark="busy"] {
+    animation: none;
+  }
+}
+
+.menu-popup {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 60;
+  display: grid;
+  min-width: 270px;
+  /* On very short screens (a phone on its side) the menu scrolls rather
+     than running off the bottom. */
+  max-height: calc(100vh - 60px);
+  max-height: calc(100dvh - 60px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-3);
+}
+
+.menu-item {
+  display: grid;
+  gap: 1px;
+  padding: 9px 12px;
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-md);
+}
+
+.menu-item:hover,
+.menu-item:focus-visible {
+  background: var(--surface-2);
+  outline: none;
+}
+
+.menu-item:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--brand);
+}
+
+.menu-item[aria-disabled="true"] {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.menu-item-label {
+  font-size: var(--fs-16);
+  font-weight: 600;
+}
+
+.menu-item-hint {
+  font-size: var(--fs-13);
+  color: var(--ink-3);
+}
+
+.menu-separator {
+  height: 1px;
+  margin: 4px 8px;
+  background: var(--line);
+}
+
+/* ===== About dialog ====================================================== */
+
+.about-dialog {
+  width: min(640px, calc(100vw - 24px));
+  max-height: min(86vh, 860px);
+  padding: 0;
+  color: var(--ink);
+  background: var(--surface);
+  border: 0;
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-3);
+}
+
+.about-dialog::backdrop {
+  background: rgb(4 22 30 / 58%);
+}
+
+.about-inner {
+  display: flex;
+  flex-direction: column;
+  max-height: inherit;
+}
+
+.about-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 12px 12px 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.about-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-22);
+  font-weight: 700;
+}
+
+.about-content {
+  display: grid;
+  gap: 20px;
+  padding: 20px 24px 24px;
+  overflow-y: auto;
+  font-size: var(--fs-16);
+}
+
+.about-content section {
+  display: grid;
+  gap: 8px;
+}
+
+.about-content h3 {
+  font-size: var(--fs-18);
+  font-weight: 700;
+}
+
+.about-content ul {
+  display: grid;
+  gap: 8px;
+  padding-left: 20px;
+  list-style: disc;
+}
+
+.about-emphasis {
+  padding: 12px 16px;
+  background: var(--surface-2);
+  border-radius: var(--r-md);
+}
+
+.developer-options summary {
+  font-size: var(--fs-14);
+  font-weight: 600;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+
+.checkbox-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 12px;
+  font-size: var(--fs-15);
+}
+
+.developer-note {
+  margin-top: 8px;
+  font-size: var(--fs-13);
+  color: var(--ink-3);
+}
+
+/* ===== Narrow side panels (small laptops, landscape phones) ============= */
+
+@container panel (max-width: 32.5rem) {
+  .panel .location-header {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .panel .location-actions {
+    grid-column: 2;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 6px;
+  }
+
+  .panel .location-side {
+    grid-column: 2;
+  }
+
+  .panel .results {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .panel .results-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+  .panel .results-context {
+    grid-column: 1;
+    grid-row: auto;
+    justify-self: start;
+    max-width: none;
+    margin-top: 6px;
+    font-size: var(--fs-14);
+    text-align: left;
+  }
+
+  .panel .results-title {
+    font-size: var(--fs-22);
+  }
+}
+
+/* Keeps Right/Left beside "Nearby locations" in the narrowest panels. */
+@container panel (max-width: 25rem) {
+  .panel .side-switch-option {
+    min-width: 52px;
+    padding: 0 10px;
+  }
+}
+
+/* ===== Narrower and shorter wide viewers ================================ */
+
+/* Laptops with a narrow viewer, and landscape phones: the search takes the
+   first row, Front/Back and Whole body the second. */
+@container viewer (max-width: 45.4rem) {
+  .viewer-wide .viewer-search {
+    top: 16px;
+    right: 20px;
+    left: 20px;
+    width: auto;
+    min-width: 0;
+  }
+
+  .viewer-wide .viewer-toolbar {
+    top: 70px;
+    right: auto;
+    left: 20px;
+    gap: 14px;
+  }
+
+  .viewer-wide .edge-label {
+    top: 128px;
+  }
+
+  /* The results and the side choice stay within the viewer. */
+  .viewer-wide .search-panel-wide {
+    width: 100%;
+  }
+}
+
+/* Very small viewers (small landscape phones): the toolbar may wrap, and
+   the corner figure gives way to the controls (Whole body stays). */
+@container viewer (max-width: 22.5rem) {
+  .viewer-wide .viewer-toolbar {
+    right: 20px;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    height: auto;
+  }
+
+  .viewer-wide .toolbar-divider {
+    display: none;
+  }
+
+  .viewer-wide .viewer-locator {
+    display: none;
+  }
+}
+
+/* Short viewers (landscape phones): smaller controls, no hint. */
+@container viewer (max-height: 32.5rem) {
+  .viewer-wide .viewer-toolbar {
+    top: 64px;
+  }
+
+  .viewer-wide .segmented-option,
+  .viewer-wide .viewer-button {
+    height: 36px;
+  }
+
+  .viewer-wide .edge-label {
+    top: 112px;
+    font-size: var(--fs-13);
+  }
+
+  .viewer-hint {
+    display: none;
+  }
+
+  .zoom-controls {
+    right: 14px;
+    bottom: 14px;
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .zoom-controls .viewer-icon-button {
+    width: 38px;
+    height: 38px;
+  }
+
+  .viewer-locator {
+    bottom: 10px;
+    left: 12px;
+  }
+
+  .viewer-locator .mini-locator-figure {
+    height: 108px;
+  }
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  .app-header-wide {
+    --header-h: 50px;
+  }
+
+  .app-header-wide .brand-name {
+    font-size: var(--fs-22);
+  }
+
+  .app-header-wide .brand-mark {
+    width: 34px;
+    height: 34px;
+  }
+
+  .app-header-wide .brand-divider,
+  .app-header-wide .brand-tagline {
+    display: none;
+  }
+
+  .panel-header {
+    padding-top: 12px;
+  }
+
+  .panel .location-name {
+    font-size: var(--fs-24);
+  }
+}
+
+/* ===== Small screens and enlarged text ================================== */
+
+@media (max-width: 360px) {
+  .location-name {
+    font-size: var(--fs-22);
+  }
+
+  .segmented-option {
+    min-width: 76px;
+    padding: 0 var(--sp-3);
+  }
+
+  .edge-label {
+    font-size: var(--fs-13);
+  }
+
+  .sheet-header,
+  .sheet-body {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  /* Keeps the grabber and "Show body" apart on the narrowest phones. */
+  .sheet-grabber {
+    width: 56px;
+  }
+
+  .sheet-action {
+    right: -8px;
+    gap: 2px;
+    padding: 0 8px;
+  }
+}
+
+/* Touch screens: every control at least 44 px high (the visual pills stay
+   small where the boards show them small; their hit area grows). */
+@media (pointer: coarse) {
+  .link-button {
+    min-height: 44px;
+  }
+
+  .chip {
+    min-height: 44px;
+  }
+
+  .side-switch-option,
+  .sheet .side-switch-option {
+    height: 40px;
+    min-width: 58px;
+  }
+
+  .segmented-option {
+    height: 38px;
+  }
+
+  .sheet-grabber-row {
+    height: 34px;
+  }
+
+  .sheet-grabber {
+    height: 34px;
+  }
+
+  .sheet-action {
+    top: 4px;
+    height: 36px;
+  }
+
+  .sheet-action::after {
+    position: absolute;
+    inset: -4px 0;
+    content: "";
+  }
+
+  .search-clear {
+    right: 0;
+    width: 44px;
+    height: 44px;
+  }
+
+  .editor-done {
+    min-height: 44px;
+  }
+
+  .stepper-button {
+    width: 46px;
+    height: 46px;
+  }
+
+  .viewer-whole-body {
+    width: 44px;
+    height: 44px;
+  }
+
+  .mini-locator {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* Phones, panel raised: a slightly denser panel, as on the "Read with
+   anatomy visible" board, so more of the results show. */
+.sheet-reading .location-name,
+.sheet-full .location-name {
+  font-size: var(--fs-20);
+}
+
+.sheet-reading .location-subtitle,
+.sheet-full .location-subtitle {
+  margin-top: 2px;
+  font-size: var(--fs-15);
+}
+
+.sheet-reading .case-controls,
+.sheet-full .case-controls {
+  gap: 10px;
+  padding: 4px 0 12px;
+}
+
+.sheet-reading .detail-chip,
+.sheet-full .detail-chip {
+  min-height: 36px;
+  font-size: var(--fs-16);
+}
+
+.sheet-reading .results,
+.sheet-full .results {
+  padding-top: 12px;
+}
+
+.sheet-reading .result-group,
+.sheet-full .result-group {
+  margin-top: 16px;
+}
+
+/* Short landscape screens: a narrower side panel leaves room for the body. */
+@media (max-height: 520px) and (orientation: landscape) {
+  .app[data-layout="wide"] .stage {
+    grid-template-columns: minmax(0, 1fr) clamp(300px, 46vw, 440px);
+  }
+}
+
+/* A smaller corner figure where the viewer is narrow. */
+@container viewer (max-width: 45.4rem) {
+  .viewer-locator .mini-locator-figure {
+    height: 132px;
+  }
+
+  .viewer-locator {
+    bottom: 76px;
+    left: 18px;
   }
 }

@@ -1,77 +1,63 @@
-import { useEffect, useState } from 'react'
+import { memo } from 'react'
 
-export default function Zone({
-  id,
-  locationName,
-  region,
-  side,
-  position,
-  scale,
-  radius = 0.085,
+/*
+ * The sphere for one anatomical location on one side of the body.
+ *
+ * Zones do not handle clicks themselves: BodyInteraction decides which
+ * zone is under the pointer (see interaction/zonePicking.js). The sphere is
+ * tagged so that decision can recognise it. It is invisible unless the
+ * developer option "Show location spheres" is on; hidden spheres are still
+ * hit-tested (three.js ignores visibility when ray casting).
+ *
+ * The selected and hovered locations are drawn on the skin itself by the
+ * body material (viewer/bodyMaterial.js), not by these spheres.
+ */
+
+const COLORS = {
+  idle: '#f59e0b',
+  hovered: '#f5c518',
+  selected: '#e2654b',
+}
+
+function updateOnce(object) {
+  object.updateMatrix()
+}
+
+// Re-rendered only when its own state changes (not while the view rotates).
+export default memo(function Zone({
+  zone,
   selected,
+  hovered,
   showDebugNodes,
-  onSelect,
 }) {
-  const [hovered, setHovered] = useState(false)
+  let color = COLORS.idle
 
-  useEffect(() => {
-    return () => {
-      document.body.style.cursor = 'default'
-    }
-  }, [])
-
-  function handlePointerOver(event) {
-    event.stopPropagation()
-    setHovered(true)
-    document.body.style.cursor = 'pointer'
-  }
-
-  function handlePointerOut() {
-    setHovered(false)
-    document.body.style.cursor = 'default'
-  }
-
-  function handleClick(event) {
-    event.stopPropagation()
-
-    onSelect({
-      id,
-      locationName,
-      region,
-      side,
-      position,
-    })
-  }
-
-let color = '#f59e0b'
-let opacity = showDebugNodes ? 0.32 : 0
-
-if (selected && showDebugNodes) {
-  color = '#ef4444'
-  opacity = 0.52
-}
-
-if (hovered) {
-  color = '#facc15'
-  opacity = showDebugNodes ? 0.34 : 0.18
-}
+  if (hovered) color = COLORS.hovered
+  if (selected) color = COLORS.selected
 
   return (
     <mesh
-      position={position}
-      scale={scale}
-      onPointerOver={handlePointerOver}
-      onPointerOut={handlePointerOut}
-      onClick={handleClick}
+      position={zone.position}
+      scale={zone.scale}
+      // Locations never move: compute the transform once, not every frame.
+      matrixAutoUpdate={false}
+      onUpdate={updateOnce}
+      visible={showDebugNodes}
+      userData={{
+        pickRole: 'zone',
+        zoneId: zone.id,
+      }}
     >
-      <sphereGeometry args={[radius, 24, 24]} />
+      <sphereGeometry args={[zone.radius, 24, 24]} />
 
       <meshStandardMaterial
         color={color}
+        emissive={color}
+        emissiveIntensity={selected ? 0.35 : 0.15}
         transparent
-        opacity={opacity}
+        opacity={selected ? 0.6 : 0.36}
         depthWrite={false}
       />
     </mesh>
   )
-}
+})
